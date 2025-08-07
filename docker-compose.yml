@@ -1,0 +1,41 @@
+# version: "3.8"
+
+# services:
+#   jual_beli:
+#     build: .
+#     container_name: react-jual-beli # nama container
+#     environment:
+#       - VIRTUAL_HOST=jual_beli.local.test
+#       - VIRTUAL_PORT=4173
+#       - LETSENCRYPT_HOST=jual_beli.local.test
+#       - LETSENCRYPT_EMAIL=muhammadirfan187@outlook.com
+#     expose:
+#       - "4173"
+#     networks:
+#       - proxy
+
+# networks:
+#   proxy:
+#     external: true
+
+version: "3.8"
+
+services:
+  jual_beli:
+    build: .
+    container_name: react-jual-beli
+    environment:
+      - VIRTUAL_HOST=jual_beli.local.test
+      - VIRTUAL_PORT=4173
+      - LETSENCRYPT_HOST=jual_beli.local.test
+      - LETSENCRYPT_EMAIL=muhammadirfan187@outlook.com
+    expose:
+      - "4173"
+    networks:
+      - proxy
+    # depends_on:
+    #   - nginx-proxy
+
+networks:
+  proxy:
+    external: true
