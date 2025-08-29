@@ -1,6 +1,12 @@
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { setToken, setExpire, setUsername } from "../redux/tokenSlice.js";
+import {
+  setToken,
+  setExpire,
+  setUsername,
+  setRole,
+  setUid,
+} from "../redux/tokenSlice.js";
 import { setNotification } from "../redux/notificationSlice.js";
 import { jwtDecode } from "jwt-decode";
 import { useEffect } from "react";
@@ -25,9 +31,12 @@ const axiosRT = (token, expire, dispatch) => {
           config.headers.Authorization = `Bearer ${response.data}`;
 
           const decoded = jwtDecode(response.data);
+
           dispatch(setToken(response.data));
           dispatch(setExpire(decoded.exp));
           dispatch(setUsername(decoded.email));
+          dispatch(setRole(decoded.role));
+          dispatch(setUid(decoded.id));
         } else {
           config.headers.Authorization = `Bearer ${token}`;
         }

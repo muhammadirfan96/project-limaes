@@ -6,48 +6,53 @@ import { IoIosPaperPlane } from "react-icons/io";
 import { MdCompareArrows, MdOutlineStorage } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { menu } from "../config/menu.jsx";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const sbar = useSelector((state) => state.bar.sidebar);
 
-  const menu = [
-    {
-      path: "manage",
-      icon: <BsSpeedometer />,
-      name: "manage",
-    },
-    {
-      path: "barang",
-      icon: <AiOutlineShopping />,
-      name: "barang",
-    },
-    {
-      path: "transaksi-pembelian",
-      icon: <IoReceiptOutline />,
-      name: "t-pembelian",
-    },
-    {
-      path: "transaksi-penjualan",
-      icon: <IoIosPaperPlane />,
-      name: "t-penjualan",
-    },
-    {
-      path: "penjual",
-      icon: <IoPeopleOutline />,
-      name: "penjual",
-    },
-    {
-      path: "pembeli",
-      icon: <FaUserFriends />,
-      name: "pembeli",
-    },
-    {
-      path: "product",
-      icon: <BsBasket />,
-      name: "product",
-    },
-  ];
+  // const menu = [
+  //   {
+  //     path: "manage",
+  //     icon: <BsSpeedometer />,
+  //     name: "manage",
+  //   },
+  //   {
+  //     path: "barang",
+  //     icon: <AiOutlineShopping />,
+  //     name: "barang",
+  //   },
+  //   {
+  //     path: "transaksi-pembelian",
+  //     icon: <IoReceiptOutline />,
+  //     name: "t-pembelian",
+  //   },
+  //   {
+  //     path: "transaksi-penjualan",
+  //     icon: <IoIosPaperPlane />,
+  //     name: "t-penjualan",
+  //   },
+  //   {
+  //     path: "penjual",
+  //     icon: <IoPeopleOutline />,
+  //     name: "penjual",
+  //   },
+  //   {
+  //     path: "pembeli",
+  //     icon: <FaUserFriends />,
+  //     name: "pembeli",
+  //   },
+  //   {
+  //     path: "product",
+  //     icon: <BsBasket />,
+  //     name: "product",
+  //   },
+  // ];
+
+  function potongTeks(teks, batas = 8) {
+    return teks.length > batas ? teks.slice(0, batas) + "..." : teks;
+  }
 
   return (
     <>
@@ -64,19 +69,10 @@ const Sidebar = () => {
               className="relative m-1 rounded bg-teal-600 px-2 py-1 text-start text-white shadow hover:bg-teal-700"
             >
               <div className="mr-2 inline-block">{each.icon}</div>
-              {each.name}
+              {potongTeks(each.name)}
               <BsCaretRight className="absolute right-1 top-2" />
             </button>
           ))}
-
-          {/* <button
-            onClick={() => navigate("/product")}
-            className="relative m-1 rounded bg-teal-700 px-2 py-1 text-start text-white shadow"
-          >
-            <BsBasket className="mr-2 inline" />
-            product
-            <BsCaretRight className="absolute right-1 top-2" />
-          </button> */}
         </div>
       </div>
     </>

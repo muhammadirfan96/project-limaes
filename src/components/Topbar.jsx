@@ -34,7 +34,7 @@ const Topbar = () => {
         </button>
         <p className="mb-1 text-center text-2xl font-bold text-white md:text-4xl">
           <button onClick={() => navigate("/")} className="font-din">
-            MERN STACK
+            HOUSE KEEPING
           </button>
         </p>
 

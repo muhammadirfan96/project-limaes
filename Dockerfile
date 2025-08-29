@@ -35,3 +35,5 @@ EXPOSE 4173
 
 # Jalankan hasil build
 CMD ["serve", "-s", "dist", "-l", "4173"]
+
+

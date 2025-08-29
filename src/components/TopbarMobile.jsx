@@ -7,19 +7,23 @@ const TopbarMobile = () => {
   const dispatch = useDispatch();
   const username = useSelector((state) => state.jwToken.username);
 
+  function potongTeks(teks, batas = 15) {
+    return teks.length > batas ? teks.slice(0, batas) + "..." : teks;
+  }
+
   return (
     <>
       <div className="fixed left-0 right-0 top-0 h-16 bg-teal-700 p-4 pt-3 md:hidden">
         <p className="mb-1 text-2xl font-bold text-white md:text-4xl">
           <button onClick={() => navigate("/")} className="font-din">
-            MERN STACK
+            HOUSE KEEPING
           </button>
         </p>
 
         <div className="absolute right-2 top-2 text-xs">
           {username ? (
             <div className="text-right">
-              <p className="mb-2 text-teal-300">Hi, {username}</p>
+              <p className="mb-2 text-teal-300">Hi, {potongTeks(username)}</p>
               <Logout />
             </div>
           ) : (
