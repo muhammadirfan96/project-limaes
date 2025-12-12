@@ -1,8 +1,15 @@
 import { axiosDefault } from "../config/axios.js";
 import { useDispatch } from "react-redux";
-import { setToken, setExpire, setUsername } from "../redux/tokenSlice.js";
+import {
+  setToken,
+  setExpire,
+  setUsername,
+  setRole,
+  setUid,
+} from "../redux/tokenSlice.js";
 import { setNotification } from "../redux/notificationSlice.js";
 import { useNavigate } from "react-router-dom";
+import { setUserLimaes } from "../redux/userlimaesSlice.js";
 
 const Logout = () => {
   const dispatch = useDispatch();
@@ -15,6 +22,9 @@ const Logout = () => {
       dispatch(setToken(""));
       dispatch(setExpire(""));
       dispatch(setUsername(""));
+      dispatch(setRole(""));
+      dispatch(setUid(""));
+      dispatch(setUserLimaes(null));
       dispatch(
         setNotification({
           message: response.data?.message,

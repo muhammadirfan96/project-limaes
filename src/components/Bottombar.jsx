@@ -7,60 +7,14 @@ import { MdCompareArrows, MdOutlineStorage } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setBottombar } from "../redux/barSlice.js";
-import { menu } from "../config/menu.jsx";
+// import { menu } from "../config/menu.jsx";
+import useMenu from "../config/menu.jsx";
 
 const Bottombar = () => {
+  const menu = useMenu();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const bbar = useSelector((state) => state.bar.bottombar);
-
-  // const menu = [
-  //   {
-  //     path: "gudang-controller",
-  //     icon: <BsSpeedometer />,
-  //     name: "manage",
-  //   },
-  //   {
-  //     path: "inventori-barang",
-  //     icon: <AiOutlineShopping />,
-  //     name: "inventori",
-  //   },
-  //   {
-  //     path: "lokasi-penyimpanan",
-  //     icon: <MdOutlineStorage />,
-  //     name: "lokasi",
-  //   },
-  //   {
-  //     path: "penerimaan-barang",
-  //     icon: <IoReceiptOutline />,
-  //     name: "penerimaan",
-  //   },
-  //   {
-  //     path: "pengiriman-barang",
-  //     icon: <IoIosPaperPlane />,
-  //     name: "pengiriman",
-  //   },
-  //   {
-  //     path: "pergeseran-barang",
-  //     icon: <MdCompareArrows />,
-  //     name: "pergeseran",
-  //   },
-  //   {
-  //     path: "stok-barang",
-  //     icon: <AiOutlineStock />,
-  //     name: "stok",
-  //   },
-  //   {
-  //     path: "pemasok",
-  //     icon: <IoPeopleOutline />,
-  //     name: "pemasok",
-  //   },
-  //   {
-  //     path: "pelanggan",
-  //     icon: <FaUserFriends />,
-  //     name: "pelanggan",
-  //   },
-  // ];
 
   function potongTeks(teks, batas = 15) {
     return teks.length > batas ? teks.slice(0, batas) + "..." : teks;
@@ -89,14 +43,14 @@ const Bottombar = () => {
           ></span>
         </button>
 
-        <div className="flex w-full justify-center overflow-auto text-center transition-all">
+        <div className="flex w-full justify-evenly overflow-auto text-center transition-all">
           {menu.map((each) => (
             <button
               key={each.path}
               onClick={() => navigate(`/${each.path}`)}
-              className="mx-0.5 my-1 rounded-md bg-teal-700 text-white"
+              className="mx-0.5 my-1 rounded-md bg-teal-700 p-2 text-white"
             >
-              <div className="flex h-10 w-16 items-center justify-center">
+              <div className="flex w-16 items-center justify-center">
                 {each.icon}
               </div>
               <div className="text-xs">{potongTeks(each.name)}</div>

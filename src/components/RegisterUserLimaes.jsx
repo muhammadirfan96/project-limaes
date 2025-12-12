@@ -21,10 +21,10 @@ const RegisterUserLimaes = () => {
 
   const [nip, setNip] = useState("");
   const [fullname, setFullname] = useState("");
-  const [jabatanlimaes_id, setJabatanLimaes_id] = useState("");
   const [bagianlimaes_id, setBagianLimaes_id] = useState("");
+  const [nomor_hp, setNomorHp] = useState("");
 
-  console.log("userlimaes", userlimaes);
+  console.log({ userlimaes });
 
   const findUserLimaes = async () => {
     try {
@@ -32,7 +32,7 @@ const RegisterUserLimaes = () => {
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes?user_id=${uid}`,
       );
       dispatch(setUserLimaes(user_limaes.data.data[0]));
-    } catch (error) {
+    } catch (e) {
       const arrError = e?.response?.data?.error?.split(",") ?? [
         "Terjadi kesalahan",
       ];
@@ -45,11 +45,6 @@ const RegisterUserLimaes = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     addUserLimaes();
-    setErrForm(null);
-    setNip("");
-    setFullname("");
-    setJabatanLimaes_id("");
-    setBagianLimaes_id("");
   };
 
   const addUserLimaes = async () => {
@@ -60,19 +55,28 @@ const RegisterUserLimaes = () => {
           user_id: uid,
           nip,
           fullname,
-          jabatanlimaes_id,
           bagianlimaes_id,
+          nomor_hp,
           createdBy: uid,
         },
       );
-      setUserLimaes(response.data.data);
       dispatch(
         setNotification({
-          type: "success",
           message: "User registered successfully!",
+          background: "bg-teal-100",
         }),
       );
-    } catch (error) {
+      setErrForm(null);
+      setNip("");
+      setFullname("");
+      setBagianLimaes_id("");
+      setBagianLimaes([]);
+      setKeyBagianLimaes("");
+      setInputBagianLimaes(true);
+      setNamaBagianLimaes("");
+
+      dispatch(setUserLimaes(response.data));
+    } catch (e) {
       const arrError = e?.response?.data?.error?.split(",") ?? [
         "Terjadi kesalahan",
       ];
@@ -94,7 +98,30 @@ const RegisterUserLimaes = () => {
           background: "bg-teal-100",
         }),
       );
-      findBarang();
+      findUserLimaes();
+    } catch (e) {
+      const arrError = e.response.data.error.split(",");
+      dispatch(
+        setNotification({ message: arrError, background: "bg-red-100" }),
+      );
+    }
+  };
+
+  const uploadTtd = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("picture", file);
+      await axiosInterceptors.patch(
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes/${userlimaes.id}/upload-picture`,
+        formData,
+      );
+      dispatch(
+        setNotification({
+          message: "selected data has been updated",
+          background: "bg-teal-100",
+        }),
+      );
+      findUserLimaes();
     } catch (e) {
       const arrError = e.response.data.error.split(",");
       dispatch(
@@ -107,42 +134,6 @@ const RegisterUserLimaes = () => {
     if (token) findUserLimaes();
   }, [token]);
 
-  // jabatanlimaes_id
-  // option select
-  const [jabatanlimaes, setJabatanLimaes] = useState([]);
-  const [keyJabatanLimaes, setKeyJabatanLimaes] = useState("");
-
-  const findJabatanLimaes = async () => {
-    try {
-      const response = await axiosInterceptors.get(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/jabatan-limaes?nama=${keyJabatanLimaes}`,
-      );
-      setJabatanLimaes(response.data.data);
-    } catch (error) {
-      const arrError = e?.response?.data?.error?.split(",") ?? [
-        "Terjadi kesalahan",
-      ];
-      dispatch(
-        setNotification({ message: arrError[0], background: "bg-red-100" }),
-      );
-    }
-  };
-
-  useEffect(() => {
-    findJabatanLimaes();
-  }, [keyJabatanLimaes]);
-
-  // input
-  const [inputJabatanLimaes, setInputJabatanLimaes] = useState(true);
-  const [namaJabatanLimaes, setNamaJabatanLimaes] = useState("");
-
-  const handleChangeOptionSelectJabatanLimaes = (event) => {
-    const selected = event.target[event.target.selectedIndex];
-    setJabatanLimaes_id(selected.value);
-    setInputJabatanLimaes(true);
-    setNamaJabatanLimaes(selected.getAttribute("data-additional-info"));
-  };
-
   // bagianlimaes_id
   // option select
 
@@ -152,10 +143,10 @@ const RegisterUserLimaes = () => {
   const findBagianLimaes = async () => {
     try {
       const response = await axiosInterceptors.get(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes?nama=${keyBagianLimaes}`,
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes?area=${keyBagianLimaes}`,
       );
       setBagianLimaes(response.data.data);
-    } catch (error) {
+    } catch (e) {
       const arrError = e?.response?.data?.error?.split(",") ?? [
         "Terjadi kesalahan",
       ];
@@ -183,87 +174,54 @@ const RegisterUserLimaes = () => {
     token &&
     !userlimaes && (
       <>
-        <div className="fixed bottom-0 left-0 right-0 top-0 z-10 flex items-center justify-center bg-slate-900 bg-opacity-80">
-          <div className="relative w-[95%] rounded-md bg-white shadow-md shadow-teal-100 md:w-[80%] lg:w-[50%]">
-            <p className="mb-2 border-b-2 border-teal-700 text-center">
-              register user limaes
+        <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-900 bg-opacity-80">
+          <div className="relative w-[95%] max-w-md rounded-lg bg-white p-6 shadow-lg shadow-teal-100">
+            {/* Header */}
+            <p className="mb-4 border-b border-teal-700 pb-2 text-center text-base font-semibold text-teal-700">
+              Register User Limaes
             </p>
+            {/* <button
+            onClick={closeModal}
+            className="absolute -right-2 -top-2 rounded-full bg-red-600 px-2 py-1 text-sm text-white shadow hover:bg-red-700"
+          >
+            ✕
+          </button> */}
 
-            <div className="mt-1 max-h-[95vh] overflow-auto p-2">
-              {errForm && (
-                <div className="mb-2 rounded border border-red-700 p-1 text-xs italic text-red-700">
-                  {errForm.map((err, index) => (
-                    <p key={index}>{err}</p>
-                  ))}
-                </div>
-              )}
-              <form onSubmit={handleSubmit}>
-                {/*data yang akan di input*/}
+            {/* Error */}
+            {errForm && (
+              <div className="mb-3 rounded border border-red-700 bg-red-50 p-2 text-xs italic text-red-700">
+                {errForm.map((err, index) => (
+                  <p key={index}>{err}</p>
+                ))}
+              </div>
+            )}
 
-                {/*nip, input type text*/}
+            {/* Form */}
+            <div className="mt-1 max-h-[80vh] overflow-auto p-2">
+              <form onSubmit={handleSubmit} className="space-y-3">
+                {/* NIP */}
                 <input
                   type="text"
-                  placeholder="nip"
-                  className="mb-1 w-full rounded-md border p-1"
+                  placeholder="NIP"
+                  className="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
                   value={nip}
                   onChange={(e) => setNip(e.target.value)}
                 />
 
-                {/*fullname, input type text*/}
+                {/* Fullname */}
                 <input
                   type="text"
-                  placeholder="fullname"
-                  className="mb-1 w-full rounded-md border p-1"
+                  placeholder="Fullname"
+                  className="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
                   value={fullname}
                   onChange={(e) => setFullname(e.target.value)}
                 />
 
-                {/*jabatanlimaes_id, input type select*/}
-                {inputJabatanLimaes ? (
-                  <button
-                    type="button"
-                    className="mb-1 w-full rounded-md border p-1 text-start"
-                    onClick={() => setInputJabatanLimaes(false)}
-                  >
-                    {namaJabatanLimaes ? (
-                      namaJabatanLimaes
-                    ) : (
-                      <span className="text-slate-400">jabatanlimaes...</span>
-                    )}
-                  </button>
-                ) : (
-                  <div className="flex justify-between">
-                    <select
-                      value={jabatanlimaes_id}
-                      onChange={handleChangeOptionSelectJabatanLimaes}
-                      className="mb-1 w-[50%] rounded-md rounded-r-none border p-1"
-                    >
-                      <option value="">list jabatanlimaes...</option>
-                      {jabatanlimaes.map((each) => (
-                        <option
-                          key={each._id}
-                          value={each._id}
-                          data-additional-info={each.nama}
-                        >
-                          {each.nama}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      placeholder="search_jabatanlimaes"
-                      className="mb-1 w-[50%] rounded-md rounded-l-none border p-1"
-                      value={keyJabatanLimaes}
-                      onChange={(e) => setKeyJabatanLimaes(e.target.value)}
-                    />
-                  </div>
-                )}
-
-                {/*bagianlimaes_id, input type select*/}
+                {/* Bagian Limaes */}
                 {inputBagianLimaes ? (
                   <button
                     type="button"
-                    className="mb-1 w-full rounded-md border p-1 text-start"
+                    className="w-full rounded-md border border-slate-300 p-2 text-start text-sm"
                     onClick={() => setInputBagianLimaes(false)}
                   >
                     {namaBagianLimaes ? (
@@ -273,70 +231,48 @@ const RegisterUserLimaes = () => {
                     )}
                   </button>
                 ) : (
-                  <div className="flex justify-between">
+                  <div className="flex gap-2">
                     <select
                       value={bagianlimaes_id}
                       onChange={handleChangeOptionSelectBagianLimaes}
-                      className="mb-1 w-[50%] rounded-md rounded-r-none border p-1"
+                      className="w-1/2 rounded-md border border-slate-300 p-2 text-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
                     >
                       <option value="">list bagianlimaes...</option>
                       {bagianlimaes.map((each) => (
                         <option
                           key={each._id}
                           value={each._id}
-                          data-additional-info={each.nama}
+                          data-additional-info={`${each.unit}-${each.area}`}
                         >
-                          {each.nama}
+                          {`${each.unit}-${each.area}`}
                         </option>
                       ))}
                     </select>
                     <input
                       type="text"
-                      placeholder="search_bagianlimaes"
-                      className="mb-1 w-[50%] rounded-md rounded-l-none border p-1"
+                      placeholder="Search bagianlimaes"
+                      className="w-1/2 rounded-md border border-slate-300 p-2 text-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
                       value={keyBagianLimaes}
                       onChange={(e) => setKeyBagianLimaes(e.target.value)}
                     />
                   </div>
                 )}
 
-                {/*picture*/}
-                <div className="relative inline-block">
-                  <img
-                    src={
-                      userlimaes?.picture
-                        ? `${import.meta.env.VITE_API_URL}/${userlimaes.picture}`
-                        : "/default.png"
-                    }
-                    alt="User Photo"
-                    className="h-16 w-16 rounded-full border border-teal-300 object-cover"
-                  />
-                  <label
-                    htmlFor={`input_image_picture`}
-                    className="absolute bottom-0 right-0 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-teal-500 p-1 shadow-md transition-all hover:bg-teal-600 active:scale-90"
-                  >
-                    <FaPencilAlt className="text-xs text-white" />
-                  </label>
-                  <input
-                    id={`input_image_picture`}
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={(e) => {
-                      if (e.target.files.length > 0) {
-                        uploadPicture(e.target.files[0]);
-                      }
-                    }}
-                  />
-                </div>
+                {/* Nomor HP */}
+                <input
+                  type="number"
+                  placeholder="Nomor HP"
+                  className="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
+                  value={nomor_hp}
+                  onChange={(e) => setNomorHp(e.target.value)}
+                />
 
-                {/* --- */}
-
+                {/* Submit */}
                 <button
                   type="submit"
-                  className="mb-1 w-full rounded-md border bg-teal-300 p-1"
+                  className="w-full rounded-md bg-teal-500 p-2 text-sm font-semibold text-white hover:bg-teal-600"
                 >
-                  submit
+                  Submit
                 </button>
               </form>
             </div>

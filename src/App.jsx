@@ -3,21 +3,21 @@ import store from "./redux/store.js";
 import { Confirmation, Notification } from "./components/Alert.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import Topbar from "./components/Topbar.jsx";
-import TopbarMobile from "./components/TopbarMobile.jsx";
 import Container from "./components/Container.jsx";
 import Bottombar from "./components/Bottombar.jsx";
+import RegisterUserLimaes from "./components/RegisterUserLimaes.jsx";
 
 function App() {
   return (
     <>
       <Provider store={store}>
         <Topbar />
-        <TopbarMobile />
         <Sidebar />
         <Container />
         <Bottombar />
         <Notification />
         <Confirmation />
+        <RegisterUserLimaes />
       </Provider>
     </>
   );

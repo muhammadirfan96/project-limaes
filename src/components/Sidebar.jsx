@@ -6,49 +6,13 @@ import { IoIosPaperPlane } from "react-icons/io";
 import { MdCompareArrows, MdOutlineStorage } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { menu } from "../config/menu.jsx";
+// import { menu } from "../config/menu.jsx";
+import useMenu from "../config/menu.jsx";
 
 const Sidebar = () => {
+  const menu = useMenu();
   const navigate = useNavigate();
   const sbar = useSelector((state) => state.bar.sidebar);
-
-  // const menu = [
-  //   {
-  //     path: "manage",
-  //     icon: <BsSpeedometer />,
-  //     name: "manage",
-  //   },
-  //   {
-  //     path: "barang",
-  //     icon: <AiOutlineShopping />,
-  //     name: "barang",
-  //   },
-  //   {
-  //     path: "transaksi-pembelian",
-  //     icon: <IoReceiptOutline />,
-  //     name: "t-pembelian",
-  //   },
-  //   {
-  //     path: "transaksi-penjualan",
-  //     icon: <IoIosPaperPlane />,
-  //     name: "t-penjualan",
-  //   },
-  //   {
-  //     path: "penjual",
-  //     icon: <IoPeopleOutline />,
-  //     name: "penjual",
-  //   },
-  //   {
-  //     path: "pembeli",
-  //     icon: <FaUserFriends />,
-  //     name: "pembeli",
-  //   },
-  //   {
-  //     path: "product",
-  //     icon: <BsBasket />,
-  //     name: "product",
-  //   },
-  // ];
 
   function potongTeks(teks, batas = 8) {
     return teks.length > batas ? teks.slice(0, batas) + "..." : teks;
