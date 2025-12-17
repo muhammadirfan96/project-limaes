@@ -14,8 +14,6 @@ const Schedule = () => {
   const userlimaes = useSelector((state) => state.userLimaes.data);
   const axiosInterceptors = axiosRT(token, expire, dispatch);
 
-  // console.log({ userlimaes });
-
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
   const [limaesData, setLimaesData] = useState([]);
@@ -67,6 +65,7 @@ const Schedule = () => {
 
     // ambil schedule
     const filter = {
+      limit: 31,
       lokasilimaes_id,
       tanggal,
     };
@@ -98,9 +97,6 @@ const Schedule = () => {
   useEffect(() => {
     if (token && userlimaes) findLimaes();
   }, [year, month, keylokasilimaes_id, token, userlimaes]);
-
-  console.log({ schedule });
-  // console.log({ limaesData });
 
   const toLocalDateTime = (dateString) => {
     if (!dateString) return "";
@@ -153,7 +149,7 @@ const Schedule = () => {
       const oldData = oldDataRes.data;
 
       openModal();
-      setTanggal(oldData.tanggal.split("T")[0]);
+      setTanggal(oldData.tanggal);
       setLokasilimaes_id(oldData.lokasilimaes_id);
       setPelaksana(oldData.pelaksana);
       setStatus(oldData.status);
@@ -223,7 +219,7 @@ const Schedule = () => {
 
   useEffect(() => {
     if (role.includes("-")) {
-      setKeyAreaLokasiLimaes(role.split("-")[1]);
+      setKeyUnitLokasiLimaes(role.split("-")[1]);
     }
   }, [role]);
 
@@ -393,14 +389,18 @@ const Schedule = () => {
               )}
 
               <form onSubmit={handleSubmit}>
-                <input
+                {/* <input
                   disabled={!!form_id}
                   type="date"
                   placeholder="tanggal"
                   className="mb-2 w-full rounded-md border p-2 text-sm"
                   value={tanggal}
                   onChange={(e) => setTanggal(e.target.value)}
-                />
+                /> */}
+
+                <p className="mb-2 rounded-lg border border-teal-200 bg-white p-2 shadow-sm">
+                  {tanggal.split("T")[0]}
+                </p>
 
                 {/* Lokasi */}
                 <div className="rounded-lg border border-teal-200 bg-white p-3 shadow-sm">

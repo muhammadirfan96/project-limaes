@@ -39,18 +39,6 @@ const Home = () => {
     if (!token || !userlimaes || !userlimaes.bagianlimaes_id) return;
 
     try {
-      // const current = new Date(year, month - 1, day);
-      // const next = new Date(current);
-      // next.setDate(current.getDate() + 1);
-
-      // const keytanggal = `${year}-${month}-${day}@${next.getFullYear()}-${
-      //   next.getMonth() + 1
-      // }-${next.getDate()}`;
-
-      // const keytanggal = `2025-11-20@2025-11-24`;
-
-      // const keytanggal = `${year}-${month}-${day}@${year}-${month}-${day}`;
-
       // to make sure tanggal is in format YYYY-MM-DD with leading zeros
       const dayString = day.toString().padStart(2, "0");
       const monthString = month.toString().padStart(2, "0");
@@ -58,13 +46,13 @@ const Home = () => {
 
       // console.log({ keytanggal });
 
-      let lokasiQuery = "";
+      let lokasilimaes_id = [];
       let unit = "";
       let area = "";
       if (role === "admin") {
         unit = "";
         area = "";
-        lokasiQuery = "";
+        lokasilimaes_id = [];
         setTitle("all unit");
       }
       if (role === "user") {
@@ -88,7 +76,7 @@ const Home = () => {
       const lokasiRes = await axiosInterceptors.get(
         `/${import.meta.env.VITE_APP_NAME}/${
           import.meta.env.VITE_APP_VERSION
-        }/lokasi-limaes?unit=${unit}&area=${area}`,
+        }/lokasi-limaes?unit=${unit}&area=${area}&limit=1000`,
       );
       // &area=${area}
 
@@ -97,16 +85,16 @@ const Home = () => {
       ];
 
       if (role === "user" || role.includes("-")) {
-        lokasiQuery = lokasilimaes_ids
-          .map((id) => `&lokasilimaes_id=${id}`)
-          .join("");
+        lokasilimaes_id = lokasilimaes_ids;
       }
 
       // 3. Ambil schedule sesuai lokasi
-      const scheduleRes = await axiosInterceptors.get(
-        `/${import.meta.env.VITE_APP_NAME}/${
-          import.meta.env.VITE_APP_VERSION
-        }/schedule-limaes?${lokasiQuery}&tanggal=${keytanggal}`,
+      const scheduleRes = await axiosInterceptors.post(
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes`,
+        {
+          lokasilimaes_id,
+          tanggal: keytanggal,
+        },
       );
 
       // &tanggal=${keytanggal}
@@ -130,25 +118,29 @@ const Home = () => {
         const merged = await Promise.all(
           scheduleData.map(async (item) => {
             try {
-              const lokasiRes = await axiosInterceptors.get(
-                `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasi-limaes/${item.lokasilimaes_id}`,
+              const lokasiResArr = await Promise.allSettled(
+                item.lokasilimaes_id.map((id) =>
+                  axiosInterceptors.get(
+                    `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasi-limaes/${id}`,
+                  ),
+                ),
               );
 
-              const lokasi = lokasiRes.data;
+              // helper untuk ambil field dari semua lokasi
+              const extractLokasiField = (resArr, key) =>
+                resArr
+                  .filter((r) => r.status === "fulfilled")
+                  .map((r) => r.value.data?.[key] ?? "deleted")
+                  .join(", ") || "deleted";
 
               return {
                 ...item,
-                unit: lokasi?.unit || "-",
-                area: lokasi?.area || "-",
-                equipment: lokasi?.equipment || "-",
+                unit: extractLokasiField(lokasiResArr, "unit"),
+                area: extractLokasiField(lokasiResArr, "area"),
+                equipment: extractLokasiField(lokasiResArr, "equipment"),
               };
-            } catch (e) {
-              return {
-                ...item,
-                unit: "-",
-                area: "-",
-                equipment: "-",
-              };
+            } catch {
+              return { ...item };
             }
           }),
         );
@@ -218,28 +210,6 @@ const Home = () => {
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {viewSchedule.length > 0 ? (
           viewSchedule.map((schedule) => {
-            // STATUS CONFIG
-            // const statusText =
-            //   schedule.status === 0
-            //     ? "Terjadwal"
-            //     : schedule.status === 1
-            //       ? "Terlaksana"
-            //       : "Terapprove";
-
-            // const statusColors =
-            //   schedule.status === 0
-            //     ? "bg-yellow-100 text-yellow-700"
-            //     : schedule.status === 1
-            //       ? "bg-green-100 text-green-700"
-            //       : "bg-green-100 text-green-700";
-
-            // const shadowColors =
-            //   schedule.status === 0
-            //     ? "shadow-yellow-300"
-            //     : schedule.status === 1
-            //       ? "shadow-green-300"
-            //       : "shadow-green-300";
-
             return (
               <div
                 key={schedule._id}
@@ -265,16 +235,16 @@ const Home = () => {
                 <div className="space-y-1 text-sm text-slate-600">
                   <p>
                     <strong className="text-slate-800">Unit:</strong>{" "}
-                    {schedule.unit}
+                    {schedule.unit.split(",")[0]}
                   </p>
                   <p>
                     <strong className="text-slate-800">Area:</strong>{" "}
-                    {schedule.area}
+                    {schedule.area.split(",")[0]}
                   </p>
-                  <p>
+                  {/* <p>
                     <strong className="text-slate-800">Equipment:</strong>{" "}
                     {schedule.equipment}
-                  </p>
+                  </p> */}
                   <p>
                     <strong className="text-slate-800">Tanggal:</strong>{" "}
                     {new Date(schedule.tanggal).toLocaleDateString("id-ID", {

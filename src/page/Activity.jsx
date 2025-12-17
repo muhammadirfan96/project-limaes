@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setNotification } from "../redux/notificationSlice.js";
 import { setConfirmation } from "../redux/confirmationSlice.js";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
-import { FaPencilAlt, FaTrash } from "react-icons/fa";
+import { FaPencilAlt, FaTrash, FaPrint } from "react-icons/fa";
 
 const Activity = () => {
   const dispatch = useDispatch();
@@ -343,8 +343,9 @@ const Activity = () => {
       const scheduleRes = await axiosInterceptors.post(
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes`,
         {
-          lokasilimaes_id,
           sortBy: "tanggal",
+          limit: 10,
+          lokasilimaes_id,
           status: ["0"],
         },
       );
@@ -779,6 +780,22 @@ const Activity = () => {
                               <FaTrash />
                             </button>
                           )}
+                          <button
+                            disabled={each.status !== 2}
+                            onClick={() =>
+                              window.open(
+                                `${import.meta.env.VITE_API_URL}/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/pdf/${each._id}`,
+                                "_blank",
+                              )
+                            }
+                            className={`rounded border p-2 text-xs transition-colors duration-200 ${
+                              each.status === 1
+                                ? "border-blue-600 text-blue-700 hover:bg-blue-600 hover:text-white"
+                                : "bg-blue-600 text-white"
+                            } disabled:opacity-50`}
+                          >
+                            <FaPrint />
+                          </button>
                         </div>
                       </td>
                     </tr>
