@@ -351,21 +351,22 @@ const Activity = () => {
           limit: 5,
           lokasilimaes_id,
           status: ["0"],
+          tanggal: `1970-01-01@${new Date().toISOString().split("T")[0]}`,
         },
       );
 
       // console.log({ scheduleRes });
 
       // filter: hanya tampilkan schedule dengan tanggal <= hari ini
-      const filteredSchedules = scheduleRes.data.data.filter((sch) => {
-        const schDate = new Date(sch.tanggal);
-        const today = new Date();
-        return schDate <= today;
-      });
+      // const filteredSchedules = scheduleRes.data.data.filter((sch) => {
+      //   const schDate = new Date(sch.tanggal);
+      //   const today = new Date();
+      //   return schDate <= today;
+      // });
 
       // merge dengan data lokasi (handle array lokasilimaes_id)
       const mergedData = await Promise.all(
-        filteredSchedules.map(async (item) => {
+        scheduleRes.data.data.map(async (item) => {
           try {
             const lokasiResArr = await Promise.allSettled(
               item.lokasilimaes_id.map((id) =>
