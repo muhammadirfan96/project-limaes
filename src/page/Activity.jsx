@@ -23,6 +23,7 @@ const Activity = () => {
   const [pelaksana, setPelaksana] = useState([userlimaes?._id]);
   const [status, setStatus] = useState("");
   const [penilaian, setPenilaian] = useState([]);
+  const [catatan, setCatatan] = useState([""]);
   const [errForm, setErrForm] = useState(null);
   const [form_id, setForm_id] = useState(null);
 
@@ -40,6 +41,7 @@ const Activity = () => {
     setPelaksana([userlimaes._id]);
     setStatus(1);
     setPenilaian([]);
+    setCatatan([""]);
   };
 
   // data states
@@ -68,6 +70,7 @@ const Activity = () => {
         : setPelaksana(d.pelaksana);
       setStatus(1);
       setPenilaian(d.penilaian);
+      setCatatan(d.catatan.length > 0 ? d.catatan : [""]);
     } catch (e) {
       const msg = e?.response?.data?.error ?? "Failed to fetch data";
       dispatch(setNotification({ message: msg, background: "bg-red-100" }));
@@ -89,6 +92,7 @@ const Activity = () => {
           pelaksana,
           status,
           penilaian,
+          catatan: catatan.filter((c) => c.trim() !== ""),
         },
       );
       dispatch(
@@ -344,7 +348,7 @@ const Activity = () => {
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes`,
         {
           sortBy: "tanggal",
-          limit: 10,
+          limit: 5,
           lokasilimaes_id,
           status: ["0"],
         },
@@ -636,6 +640,9 @@ const Activity = () => {
                       Evidence
                     </th>
                     <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
+                      Catatan
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
                       Action
                     </th>
                   </tr>
@@ -752,6 +759,18 @@ const Activity = () => {
                               </>
                             )}
                           </div>
+                        )}
+                      </td>
+                      {/* catatan is an array */}
+                      <td className="px-3 py-2">
+                        {each.catatan && each.catatan.length > 0 ? (
+                          <ul className="list-disc pl-5">
+                            {each.catatan.map((cat, idx) => (
+                              <li key={`${each._id}-catatan-${idx}`}>{cat}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          "-"
                         )}
                       </td>
                       <td className="px-3 py-2">
@@ -901,6 +920,54 @@ const Activity = () => {
                         />
                         {eachUserLimaes.fullname}
                       </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section Catatan */}
+                <div className="rounded-lg border border-teal-200 bg-white p-3 shadow-sm">
+                  <div className="relative mb-3 flex items-center justify-between border-b border-teal-300 pb-1">
+                    <p className="text-sm font-medium text-teal-700">Catatan</p>
+                    <button
+                      type="button"
+                      onClick={() => setCatatan([...catatan, ""])}
+                      className="text-xs font-bold text-teal-600 hover:text-teal-800"
+                    >
+                      + Tambah Baris
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {catatan.map((item, index) => (
+                      <div key={index} className="flex gap-2">
+                        <textarea
+                          value={item}
+                          onChange={(e) => {
+                            const newCatatan = [...catatan];
+                            newCatatan[index] = e.target.value;
+                            setCatatan(newCatatan);
+                          }}
+                          placeholder={`Catatan ke-${index + 1}`}
+                          className="w-full rounded border border-teal-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                          rows="2"
+                        />
+
+                        {/* Tombol Hapus: Hanya muncul jika list lebih dari 1 */}
+                        {catatan.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newCatatan = catatan.filter(
+                                (_, i) => i !== index,
+                              );
+                              setCatatan(newCatatan);
+                            }}
+                            className="flex items-center justify-center rounded border border-red-200 bg-red-50 px-2 text-red-500 hover:bg-red-100"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>

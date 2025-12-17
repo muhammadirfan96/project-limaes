@@ -23,6 +23,7 @@ const Approval = () => {
   const [lokasilimaes_id, setLokasilimaes_id] = useState("");
   const [pelaksana, setPelaksana] = useState([userlimaes?._id]);
   const [status, setStatus] = useState("");
+  const [catatan, setCatatan] = useState([""]);
 
   // console.log(defaultPenilaian);
 
@@ -70,6 +71,7 @@ const Approval = () => {
     setPelaksana([userlimaes._id]);
     setStatus(2);
     setPenilaian(defaultPenilaian);
+    setCatatan([""]);
   };
 
   // dataStatus2 states
@@ -89,16 +91,17 @@ const Approval = () => {
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/${id}`,
       );
       const d = oldData.data;
-      setModalName("penilaian");
+      setModalName("catatan + penilaian");
       openModal();
       setTanggal(d.tanggal);
       setLokasilimaes_id(d.lokasilimaes_id);
       setPelaksana(d.pelaksana);
       setStatus(2);
-      console.log({ penilaian });
+      // console.log({ penilaian });
       d.penilaian.length === 0
         ? setPenilaian(defaultPenilaian)
         : setPenilaian(d.penilaian);
+      d.catatan.length === 0 ? setCatatan([""]) : setCatatan(d.catatan);
     } catch (e) {
       const msg = e?.response?.data?.error ?? "Failed to fetch data";
       dispatch(setNotification({ message: msg, background: "bg-red-100" }));
@@ -121,6 +124,7 @@ const Approval = () => {
           pelaksana,
           status,
           penilaian,
+          catatan: catatan.filter((c) => c.trim() !== ""),
         },
       );
       dispatch(
@@ -583,6 +587,9 @@ const Approval = () => {
                       Evidence
                     </th>
                     <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
+                      Catatan
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
                       Action
                     </th>
                   </tr>
@@ -701,6 +708,18 @@ const Approval = () => {
                           </div>
                         )}
                       </td>
+                      {/* catatan is an array */}
+                      <td className="px-3 py-2">
+                        {each.catatan && each.catatan.length > 0 ? (
+                          <ul className="list-disc pl-5">
+                            {each.catatan.map((cat, idx) => (
+                              <li key={`${each._id}-catatan-${idx}`}>{cat}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
                       <td className="px-3 py-2">
                         <div className="flex gap-2">
                           <button
@@ -767,87 +786,152 @@ const Approval = () => {
                 </div>
               )}
 
-              <form
-                onSubmit={handleSubmit}
-                className="mx-auto max-w-3xl space-y-4 p-4"
-              >
-                <div className="max-h-[300px] space-y-4 overflow-y-auto pr-2">
+              <form onSubmit={handleSubmit} className="mx-auto space-y-4">
+                {/* catatan */}
+                <div className="rounded-lg border border-teal-200 bg-white p-3 shadow-sm">
+                  <div className="relative mb-3 flex items-center justify-between border-b border-teal-300 pb-1">
+                    <p className="text-sm font-medium text-teal-700">Catatan</p>
+                    <button
+                      type="button"
+                      onClick={() => setCatatan([...catatan, ""])}
+                      className="text-xs font-bold text-teal-600 hover:text-teal-800"
+                    >
+                      + Tambah Baris
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {catatan.map((item, index) => (
+                      <div key={index} className="flex gap-2">
+                        <textarea
+                          value={item}
+                          onChange={(e) => {
+                            const newCatatan = [...catatan];
+                            newCatatan[index] = e.target.value;
+                            setCatatan(newCatatan);
+                          }}
+                          placeholder={`Catatan ke-${index + 1}`}
+                          className="w-full rounded border border-teal-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                          rows="2"
+                        />
+
+                        {/* Tombol Hapus: Hanya muncul jika list lebih dari 1 */}
+                        {catatan.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newCatatan = catatan.filter(
+                                (_, i) => i !== index,
+                              );
+                              setCatatan(newCatatan);
+                            }}
+                            className="flex items-center justify-center rounded border border-red-200 bg-red-50 px-2 text-red-500 hover:bg-red-100"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="custom-scrollbar max-h-[300px] space-y-3 overflow-y-auto pr-2">
                   {penilaian.map((entry, index) => (
                     <div
                       key={`${entry.item}-${index}`}
-                      className="rounded-md border border-slate-200 p-3 shadow-sm"
+                      className="rounded-lg border border-teal-200 bg-white p-3 shadow-sm"
                     >
-                      <div className="mb-2 flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-slate-800">
-                            {entry.item}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {entry.deskripsi}
-                          </p>
-                        </div>
+                      {/* Header Item: Nama & Tombol Hapus */}
+                      <div className="relative mb-2 flex items-center justify-between border-b border-teal-100 pb-1">
+                        <p className="text-sm font-bold text-teal-800">
+                          {entry.item}
+                        </p>
                         <button
                           type="button"
                           onClick={() => handleDeleteItem(index)}
-                          className="text-xs font-medium text-red-600 hover:text-red-800"
+                          className="text-[10px] font-bold uppercase tracking-wider text-red-500 hover:text-red-700"
                         >
                           Hapus
                         </button>
                       </div>
 
-                      {/* Radio nilai */}
-                      <div className="flex gap-4">
-                        {[1, 2, 3, 4, 5].map((val) => (
-                          <label
-                            key={val}
-                            className="flex items-center gap-1 text-sm text-slate-700"
-                          >
-                            <input
-                              type="radio"
-                              name={`nilai-${index}`}
-                              value={val}
-                              checked={entry.nilai === val}
-                              onChange={(e) =>
-                                handleChangeNilai(index, e.target.value)
-                              }
-                              className="accent-teal-600"
-                            />
-                            <span>{val}</span>
-                          </label>
-                        ))}
+                      {/* Deskripsi */}
+                      <p className="mb-3 text-xs leading-relaxed text-slate-600">
+                        {entry.deskripsi}
+                      </p>
+
+                      {/* Radio Nilai: Dibuat lebih bersih */}
+                      <div className="flex items-center gap-4 rounded-md bg-teal-50/50 p-2">
+                        <span className="text-[10px] font-bold uppercase text-teal-600">
+                          Skor:
+                        </span>
+                        <div className="flex gap-4">
+                          {[1, 2, 3, 4, 5].map((val) => (
+                            <label
+                              key={val}
+                              className="flex cursor-pointer items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-teal-700"
+                            >
+                              <input
+                                type="radio"
+                                name={`nilai-${index}`}
+                                value={val}
+                                checked={entry.nilai === val}
+                                onChange={(e) =>
+                                  handleChangeNilai(index, e.target.value)
+                                }
+                                className="h-4 w-4 accent-teal-600"
+                              />
+                              <span>{val}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {/* Tambah item baru */}
-                <div className="space-y-2 rounded-md border border-slate-200 p-3 shadow-sm">
-                  <input
-                    type="text"
-                    placeholder="Nama item baru"
-                    className="w-full rounded-md border border-slate-300 p-2 text-sm"
-                    value={newItem}
-                    onChange={(e) => setNewItem(e.target.value)}
-                  />
-                  <textarea
-                    placeholder="Deskripsi item"
-                    className="w-full rounded-md border border-slate-300 p-2 text-sm"
-                    value={newDeskripsi}
-                    onChange={(e) => setNewDeskripsi(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddItem}
-                    className="w-full rounded-md bg-green-700 p-2 text-sm font-semibold text-white hover:bg-green-600"
-                  >
-                    Tambah Item
-                  </button>
+                <div className="rounded-lg border border-teal-200 bg-white p-3 shadow-sm">
+                  {/* Header Tambah Item */}
+                  <div className="relative mb-3 flex items-center justify-between border-b border-teal-300 pb-1">
+                    <p className="text-sm font-medium text-teal-700">
+                      Tambah Item Penilaian
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleAddItem}
+                      className="text-xs font-bold text-teal-600 hover:text-teal-800"
+                    >
+                      + Tambah ke List
+                    </button>
+                  </div>
+
+                  {/* Form Input Item Baru */}
+                  <div className="space-y-2">
+                    <div className="flex flex-col gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nama item baru (contoh: Kualitas Kerja)"
+                        className="w-full rounded border border-teal-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                        value={newItem}
+                        onChange={(e) => setNewItem(e.target.value)}
+                      />
+
+                      <textarea
+                        placeholder="Deskripsi item penilaian..."
+                        className="w-full rounded border border-teal-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                        rows="2"
+                        value={newDeskripsi}
+                        onChange={(e) => setNewDeskripsi(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Approve */}
                 <button
                   type="submit"
-                  className="w-full rounded-md bg-blue-700 p-2 text-sm font-semibold text-white hover:bg-blue-600"
+                  className="w-full rounded-md bg-teal-500 p-2 text-sm font-semibold text-white hover:bg-teal-600"
                 >
                   Approve
                 </button>
