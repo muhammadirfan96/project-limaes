@@ -3,7 +3,7 @@ version: "3.8"
 services:
   limaes:
     build: .
-    container_name: react-limaes
+    container_name: limaes
     environment:
       - VIRTUAL_HOST=limaes.webpunagaya.com
       - VIRTUAL_PORT=4173
