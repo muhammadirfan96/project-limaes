@@ -24,7 +24,7 @@ const RegisterUserLimaes = () => {
   const [bagianlimaes_id, setBagianLimaes_id] = useState("");
   const [nomor_hp, setNomorHp] = useState("");
 
-  console.log({ userlimaes });
+  // console.log({ userlimaes });
 
   const findUserLimaes = async () => {
     try {
@@ -131,8 +131,8 @@ const RegisterUserLimaes = () => {
   };
 
   useEffect(() => {
-    if (token) findUserLimaes();
-  }, [token]);
+    if (token && uid) findUserLimaes();
+  }, [token, uid]);
 
   // bagianlimaes_id
   // option select
