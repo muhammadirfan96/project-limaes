@@ -276,7 +276,7 @@ const Activity = () => {
   };
 
   useEffect(() => {
-    userlimaes && userlimaes._id && findData();
+    findData();
   }, [token, userlimaes, limit, page, key]);
 
   const pageComponents = [];

@@ -293,7 +293,7 @@ const Approval = () => {
         filter,
       );
 
-      console.log({ scheduleRes });
+      // console.log({ scheduleRes });
 
       // hanya jadwal yang punya evidence
       const filteredSchedules = scheduleRes.data.data.filter(
@@ -374,11 +374,11 @@ const Approval = () => {
   };
 
   useEffect(() => {
-    userlimaes && userlimaes._id && findDataStatus(1);
+    findDataStatus(1);
   }, [token, userlimaes]);
 
   useEffect(() => {
-    userlimaes && userlimaes._id && findDataStatus(2);
+    findDataStatus(2);
   }, [token, userlimaes, limit, page, key]);
 
   // upload evidence function
