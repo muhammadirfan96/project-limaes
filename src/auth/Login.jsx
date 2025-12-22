@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { axiosDefault } from "../config/axios.js";
 import { useDispatch } from "react-redux";
-import { setToken, setExpire, setUsername } from "../redux/tokenSlice.js";
+import {
+  setToken,
+  setExpire,
+  setUsername,
+  setRole,
+  setUid,
+} from "../redux/tokenSlice.js";
 import { setNotification } from "../redux/notificationSlice.js";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +29,8 @@ const Login = () => {
       dispatch(setToken(response.data));
       dispatch(setExpire(decoded.exp));
       dispatch(setUsername(decoded.email));
+      dispatch(setRole(decoded.role));
+      dispatch(setUid(decoded.id));
       dispatch(
         setNotification({
           message: "logged in",
