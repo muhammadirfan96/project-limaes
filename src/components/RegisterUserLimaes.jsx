@@ -115,7 +115,11 @@ const RegisterUserLimaes = () => {
   }, [uid, unitFilter, areaFilter]);
 
   useEffect(() => {
-    token && uid && !userlimaes && dispatch(setBottombarBackward(true));
+    token &&
+      uid &&
+      !userlimaes &&
+      !bbarBackward &&
+      dispatch(setBottombarBackward(true));
   }, [bbarBackward]);
 
   return (

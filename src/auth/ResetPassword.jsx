@@ -54,7 +54,7 @@ const ResetPassword = () => {
   };
 
   useEffect(() => {
-    dispatch(setBottombarBackward(true));
+    !bbarBackward && dispatch(setBottombarBackward(true));
   }, [bbarBackward]);
 
   return (
