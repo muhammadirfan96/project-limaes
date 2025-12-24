@@ -3,6 +3,7 @@ import { axiosRT } from "../config/axios.js";
 import { useDispatch, useSelector } from "react-redux";
 import { setNotification } from "../redux/notificationSlice.js";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
+import { setBottombarBackward } from "../redux/barSlice.js";
 
 const Schedule = () => {
   const dispatch = useDispatch();
@@ -50,18 +51,7 @@ const Schedule = () => {
     const totalDays = daysInMonth(month, year);
     const tanggal = `${year}-${monthString}-01@${year}-${monthString}-${totalDays}`;
 
-    // let queryParametersLokasiLimaes_id = keylokasilimaes_id
-    //   .map((id) => `lokasilimaes_id=${id}`)
-    //   .join("&");
-
     const lokasilimaes_id = keylokasilimaes_id;
-
-    // lokasilimaes_id.length === 1 &&
-    //   (queryParametersLokasiLimaes_id = `lokasilimaes_id=${keylokasilimaes_id[0]}&lokasilimaes_id=${keylokasilimaes_id[0]}`);
-
-    // const res = await axiosInterceptors.get(
-    //   `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes?tanggal=${tanggal}&${queryParametersLokasiLimaes_id}`,
-    // );
 
     // ambil schedule
     const filter = {
@@ -95,8 +85,8 @@ const Schedule = () => {
   };
 
   useEffect(() => {
-    if (token && userlimaes) findLimaes();
-  }, [year, month, keylokasilimaes_id, token, userlimaes]);
+    findLimaes();
+  }, [year, month, keylokasilimaes_id]);
 
   const toLocalDateTime = (dateString) => {
     if (!dateString) return "";
@@ -112,7 +102,10 @@ const Schedule = () => {
   const [namaModal, setNamaModal] = useState("");
   const [showModal, setShowModal] = useState(false);
 
-  const openModal = () => setShowModal(true);
+  const openModal = () => {
+    setShowModal(true);
+    dispatch(setBottombarBackward(true));
+  };
 
   const closeModal = () => {
     setShowModal(false);
@@ -123,6 +116,7 @@ const Schedule = () => {
     setPelaksana([]);
     setStatus("");
     setPenilaian([]);
+    dispatch(setBottombarBackward(false));
   };
 
   // ==========================
@@ -221,7 +215,7 @@ const Schedule = () => {
     if (role.includes("-")) {
       setKeyUnitLokasiLimaes(role.split("-")[1]);
     }
-  }, [role]);
+  }, []);
 
   const findLokasiLimaes = async () => {
     try {
@@ -236,6 +230,7 @@ const Schedule = () => {
       !keyUnitLokasiLimaes || !keyAreaLokasiLimaes
         ? setKeylokasilimaes_id([])
         : setKeylokasilimaes_id(lokasilimaes_ids);
+
       setListLokasilimaes(res.data.data);
     } catch (error) {
       dispatch(
@@ -250,22 +245,29 @@ const Schedule = () => {
   };
 
   useEffect(() => {
-    if (token && userlimaes) findLokasiLimaes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    keyUnitLokasiLimaes,
-    keyAreaLokasiLimaes,
-    keyEquipmentLokasiLimaes,
-    token,
-    userlimaes,
-  ]);
+    findLokasiLimaes();
+  }, [keyUnitLokasiLimaes, keyAreaLokasiLimaes, keyEquipmentLokasiLimaes]);
 
   // ==========================
   // 🔹 RENDER
   // ==========================
   if (!token || !userlimaes)
     return (
-      <div className="m-4 rounded bg-red-100 p-4 text-center">unauthorized</div>
+      <div className="m-4 flex items-center justify-center">
+        <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+            <span className="text-xl">⛔</span>
+          </div>
+
+          <h3 className="text-sm font-semibold text-red-800">
+            Unauthorized Access
+          </h3>
+
+          <p className="mt-1 text-xs text-red-700">
+            Anda tidak memiliki akses. Silakan login terlebih dahulu.
+          </p>
+        </div>
+      </div>
     );
 
   return (
@@ -273,7 +275,7 @@ const Schedule = () => {
       <div className="mt-2 flex flex-wrap justify-evenly gap-2">
         <div className="w-[95%]">
           {/* Header */}
-          <p className="mb-4 rounded-md bg-teal-500 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm">
+          <p className="mb-4 rounded-md bg-gradient-to-r from-teal-200 via-teal-400 to-emerald-500 px-4 py-2 text-center text-sm font-semibold shadow-lg">
             Schedule
           </p>
 
@@ -368,7 +370,7 @@ const Schedule = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-900 bg-opacity-80">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 bg-opacity-80">
           <div className="relative w-[95%] rounded-md bg-white shadow-lg md:w-[80%] lg:w-[50%]">
             <p className="mb-2 border-b-2 border-teal-700 py-2 text-center text-base font-semibold text-teal-700">
               {namaModal}
@@ -389,15 +391,6 @@ const Schedule = () => {
               )}
 
               <form onSubmit={handleSubmit}>
-                {/* <input
-                  disabled={!!form_id}
-                  type="date"
-                  placeholder="tanggal"
-                  className="mb-2 w-full rounded-md border p-2 text-sm"
-                  value={tanggal}
-                  onChange={(e) => setTanggal(e.target.value)}
-                /> */}
-
                 <p className="mb-2 rounded-lg border border-teal-200 bg-white p-2 shadow-sm">
                   {tanggal.split("T")[0]}
                 </p>
@@ -406,11 +399,7 @@ const Schedule = () => {
                 <div className="rounded-lg border border-teal-200 bg-white p-3 shadow-sm">
                   <p className="relative mb-3 border-b border-teal-300 pb-1 text-sm font-medium text-teal-700">
                     Lokasi / Equipment
-                    <select
-                      // value={searchBasedListLokasi}
-                      // onChange={(e) => setSearchBasedListLokasi(e.target.value)}
-                      className="absolute right-0 rounded border border-teal-300 px-2 py-1 text-xs text-teal-700"
-                    >
+                    <select className="absolute right-0 rounded border border-teal-300 px-2 py-1 text-xs text-teal-700">
                       <option value="equipment">equipment</option>
                     </select>
                   </p>
@@ -421,8 +410,6 @@ const Schedule = () => {
                       type="text"
                       placeholder="Masukkan kata kunci..."
                       className="w-full rounded border border-teal-300 px-2 py-1 text-sm"
-                      // value={searchListLokasi}
-                      // onChange={(e) => setSearchListLokasi(e.target.value)}
                       value={keyEquipmentLokasiLimaes}
                       onChange={(e) =>
                         setKeyEquipmentLokasiLimaes(e.target.value)
@@ -430,11 +417,6 @@ const Schedule = () => {
                     />
                     <button
                       type="button"
-                      // onClick={() =>
-                      //   setKeyListLokasi(
-                      //     `${searchBasedListLokasi}=${searchListLokasi}`,
-                      //   )
-                      // }
                       className="rounded bg-green-600 p-2 text-white hover:bg-green-700"
                     >
                       <HiMiniMagnifyingGlass />
@@ -482,8 +464,21 @@ const Schedule = () => {
 
       {/* If no data */}
       {!loading && schedule.length === 0 && (
-        <div className="m-4 rounded bg-yellow-100 p-4 text-center text-sm text-yellow-700">
-          No data. Please adjust unit / area filter.
+        <div className="m-4 flex items-center justify-center">
+          <div className="w-full max-w-md rounded-xl border border-yellow-200 bg-yellow-50 p-6 text-center shadow-sm">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100">
+              <span className="text-xl">⚠️</span>
+            </div>
+
+            <h3 className="text-sm font-semibold text-yellow-800">
+              Data Tidak Ditemukan
+            </h3>
+
+            <p className="mt-1 text-xs text-yellow-700">
+              Tidak ada data yang sesuai. Silakan sesuaikan filter unit atau
+              area.
+            </p>
+          </div>
         </div>
       )}
     </>

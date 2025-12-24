@@ -1,0 +1,21 @@
+.bubble {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgb(255, 255, 255); /* teal soft */
+  animation: bubbleMove linear infinite;
+  pointer-events: none;
+}
+
+@keyframes bubbleMove {
+  from {
+    transform: translate(0, 0) scale(0.9);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.4;
+  }
+  to {
+    transform: translate(var(--move-x), var(--move-y)) scale(1.05);
+    opacity: 0;
+  }
+}

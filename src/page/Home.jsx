@@ -20,6 +20,7 @@ const Home = () => {
   const token = useSelector((state) => state.jwToken.token);
   const expire = useSelector((state) => state.jwToken.expire);
   const role = useSelector((state) => state.jwToken.role);
+  const uid = useSelector((state) => state.jwToken.uid);
   const userlimaes = useSelector((state) => state.userLimaes.data);
   const axiosInterceptors = axiosRT(token, expire, dispatch);
 
@@ -159,25 +160,79 @@ const Home = () => {
   // ============================
   useEffect(() => {
     fetchScheduleLimaes();
-  }, [userlimaes, token]);
+  }, [userlimaes]);
 
   // ============================
   // VIEW JIKA BELUM LOGIN
   // ============================
   if (!token || !userlimaes)
     return (
-      <div className="mx-auto max-w-xl p-4">
-        <div className="mx-auto flex w-64 justify-center rounded-xl bg-white p-3 text-6xl text-green-700 shadow-md">
-          <SiMongodb className="mx-1" />
-          <SiExpress className="mx-1" />
-          <SiReact className="mx-1" />
-          <SiNodedotjs className="mx-1" />
-        </div>
+      <div className="h-screen w-full bg-gradient-to-br from-slate-50 via-white to-teal-50">
+        <div className="mx-auto flex h-full max-w-7xl items-center px-8">
+          {/* Left Content */}
+          <div className="w-full space-y-6 md:w-1/2">
+            <h1 className="text-5xl font-bold leading-tight text-slate-800">
+              Sistem Monitoring
+              <br />
+              <span className="text-teal-600">House Keeping</span>
+            </h1>
 
-        <div className="mt-5 space-y-4">
-          <div className="rounded-xl bg-teal-100 p-4 text-center shadow">
-            <h1 className="text-2xl font-bold">Welcome to HOUSE KEEPING</h1>
-            <p className="mt-2">This application is built with MERN Stack:</p>
+            <p className="max-w-lg text-lg text-slate-600">
+              Platform terintegrasi untuk penjadwalan, pelaksanaan, dan
+              monitoring kegiatan House Keeping secara real-time.
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <span className="rounded-full bg-teal-100 px-4 py-2 text-sm font-semibold text-teal-700">
+                Real-time Monitoring
+              </span>
+              <span className="rounded-full bg-teal-100 px-4 py-2 text-sm font-semibold text-teal-700">
+                Terintegrasi Unit
+              </span>
+              <span className="rounded-full bg-teal-100 px-4 py-2 text-sm font-semibold text-teal-700">
+                Laporan Digital
+              </span>
+            </div>
+
+            <p className="text-sm text-slate-500">
+              Silakan login melalui menu di kanan atas untuk mengakses fitur
+              lengkap aplikasi.
+            </p>
+          </div>
+
+          {/* Right Visual */}
+          <div className="relative hidden w-1/2 md:block">
+            <div className="absolute right-0 top-1/2 w-[420px] -translate-y-1/2 space-y-4">
+              <div className="rounded-2xl bg-white p-5 shadow-lg ring-1 ring-slate-200">
+                <p className="text-sm font-semibold text-teal-700">
+                  Penjadwalan Terstruktur
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Perencanaan kegiatan House Keeping yang tersusun rapi,
+                  terjadwal jelas, dan terdokumentasi secara sistematis.
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-5 shadow-lg ring-1 ring-slate-200">
+                <p className="text-sm font-semibold text-teal-700">
+                  Monitoring Lapangan
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Pemantauan pelaksanaan House Keeping secara aktual untuk
+                  memastikan kegiatan berjalan sesuai rencana.
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-5 shadow-lg ring-1 ring-slate-200">
+                <p className="text-sm font-semibold text-teal-700">
+                  Laporan & Evaluasi
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Penyajian laporan digital sebagai dasar evaluasi dan
+                  peningkatan kinerja House Keeping secara berkelanjutan.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -186,21 +241,25 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-slate-100 p-4">
       {/* HEADER */}
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-extrabold uppercase tracking-wide text-slate-800 drop-shadow">
-          {title}
-        </h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white px-6 py-4 shadow-sm ring-1 ring-slate-200">
+        {/* Left: Title */}
+        <div>
+          <h1 className="text-2xl font-extrabold uppercase tracking-wide text-slate-800">
+            {title}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {new Date().toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+        </div>
 
-        <h2 className="mt-2 text-lg text-slate-600">
-          {new Date().toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
-        </h2>
-
-        <div className="mt-3 inline-block rounded-lg bg-white px-4 py-2 shadow">
-          <span className="font-semibold text-slate-700">
+        {/* Right: Time */}
+        <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-2 ring-1 ring-slate-200">
+          <span className="text-sm font-semibold text-slate-600">Waktu:</span>
+          <span className="font-semibold text-teal-700">
             <Time />
           </span>
         </div>

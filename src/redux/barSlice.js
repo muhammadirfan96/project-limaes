@@ -5,6 +5,7 @@ const barSlice = createSlice({
   initialState: {
     sidebar: true,
     bottombar: false,
+    bottombarBackward: false,
   },
   reducers: {
     setSidebar(state) {
@@ -13,8 +14,12 @@ const barSlice = createSlice({
     setBottombar(state) {
       state.bottombar = !state.bottombar;
     },
+    setBottombarBackward(state) {
+      state.bottombarBackward = !state.bottombarBackward;
+    },
   },
 });
 
-export const { setSidebar, setBottombar } = barSlice.actions;
+export const { setSidebar, setBottombar, setBottombarBackward } =
+  barSlice.actions;
 export default barSlice.reducer;

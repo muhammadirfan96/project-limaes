@@ -21,7 +21,7 @@ const Container = () => {
         className={`${
           sbar && "md:ml-52"
         } fixed left-0 right-0 top-0 mx-auto mt-[64px] overflow-x-auto pt-5 md:bottom-0 ${
-          !bbar ? "bottom-20" : "bottom-0"
+          !bbar ? "bottom-0" : "bottom-0"
         }`}
       >
         <Routes>

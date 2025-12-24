@@ -10,6 +10,7 @@ import {
 import { setNotification } from "../redux/notificationSlice.js";
 import { useNavigate } from "react-router-dom";
 import { setUserLimaes } from "../redux/userlimaesSlice.js";
+import { FiLogOut } from "react-icons/fi";
 
 const Logout = () => {
   const dispatch = useDispatch();
@@ -25,32 +26,35 @@ const Logout = () => {
       dispatch(setRole(""));
       dispatch(setUid(""));
       dispatch(setUserLimaes(null));
+
       dispatch(
         setNotification({
-          message: response.data?.message,
+          message: response.data?.message || "Logout berhasil",
           background: "bg-teal-100",
         }),
       );
+
       navigate("/");
     } catch (e) {
-      const arrError = e.response.data.error.split(",");
+      const err = e?.response?.data?.error?.split(",")?.[0] || "Logout gagal";
       dispatch(
-        setNotification({ message: arrError, background: "bg-red-100" }),
+        setNotification({
+          message: err,
+          background: "bg-red-100",
+        }),
       );
     }
   };
 
   return (
-    <>
-      <div>
-        <button
-          onClick={handleLogout}
-          className="mx-1 rounded bg-red-700 p-1 text-white shadow"
-        >
-          logout
-        </button>
-      </div>
-    </>
+    <button
+      onClick={handleLogout}
+      className="flex items-center gap-1 rounded-lg bg-red-500/90 px-3 py-1 text-xs font-semibold text-white shadow transition-all hover:bg-red-600 hover:shadow-md active:scale-95"
+      title="Logout"
+    >
+      <FiLogOut className="text-sm" />
+      <span className="hidden sm:inline">Logout</span>
+    </button>
   );
 };
 

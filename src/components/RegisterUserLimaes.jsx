@@ -3,6 +3,8 @@ import { axiosRT } from "../config/axios.js";
 import { useDispatch, useSelector } from "react-redux";
 import { setNotification } from "../redux/notificationSlice.js";
 import { setUserLimaes } from "../redux/userlimaesSlice.js";
+import { setBottombarBackward } from "../redux/barSlice.js";
+import { use } from "react";
 
 const RegisterUserLimaes = () => {
   const dispatch = useDispatch();
@@ -43,7 +45,7 @@ const RegisterUserLimaes = () => {
 
   useEffect(() => {
     if (token && uid) findUserLimaes();
-  }, [token, uid]);
+  }, [uid]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -74,6 +76,7 @@ const RegisterUserLimaes = () => {
       setBagianLimaes_id("");
       setNomorHp("");
 
+      dispatch(setBottombarBackward(false));
       dispatch(setUserLimaes(response.data));
     } catch (e) {
       const arrError = e?.response?.data?.error?.split(",") ?? [
@@ -107,14 +110,18 @@ const RegisterUserLimaes = () => {
 
   useEffect(() => {
     findBagian();
-  }, [unitFilter, areaFilter]);
+  }, [uid, unitFilter, areaFilter]);
+
+  useEffect(() => {
+    token && uid && !userlimaes && dispatch(setBottombarBackward(true));
+  }, []);
 
   return (
     token &&
     uid &&
     !userlimaes && (
       <>
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-900 bg-opacity-80">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 bg-opacity-80">
           <div className="relative w-[95%] max-w-md rounded-lg bg-white p-6 shadow-lg shadow-teal-100">
             {/* Header */}
             <p className="mb-4 border-b border-teal-700 pb-2 text-center text-base font-semibold text-teal-700">

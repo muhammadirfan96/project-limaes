@@ -6,6 +6,7 @@ import { setConfirmation } from "../redux/confirmationSlice.js";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
 import { FaPencilAlt, FaTrash } from "react-icons/fa";
 import defaultPenilaian from "../config/defaultPenilaian.js";
+import { setBottombarBackward } from "../redux/barSlice.js";
 
 const Approval = () => {
   const dispatch = useDispatch();
@@ -60,7 +61,10 @@ const Approval = () => {
   // modal states
   const [namaModal, setModalName] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const openModal = () => setShowModal(true);
+  const openModal = () => {
+    setShowModal(true);
+    dispatch(setBottombarBackward(true));
+  };
   const closeModal = () => {
     setShowModal(false);
     setErrForm(null);
@@ -72,6 +76,7 @@ const Approval = () => {
     setStatus(2);
     setPenilaian(defaultPenilaian);
     setCatatan([""]);
+    dispatch(setBottombarBackward(false));
   };
 
   // dataStatus2 states
@@ -375,11 +380,11 @@ const Approval = () => {
 
   useEffect(() => {
     findDataStatus(1);
-  }, [token, userlimaes]);
+  }, [userlimaes]);
 
   useEffect(() => {
     findDataStatus(2);
-  }, [token, userlimaes, limit, page, key]);
+  }, [userlimaes, limit, page, key]);
 
   // upload evidence function
   const uploadEvidence = async (id, file) => {
@@ -407,31 +412,31 @@ const Approval = () => {
     }
   };
 
-  // delete evidence function
-  const deleteEvidence = async (id, filename) => {
-    try {
-      await axiosInterceptors.delete(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/${id}/delete-evidence?filename=${encodeURIComponent(filename)}`,
-      );
-      dispatch(
-        setNotification({
-          message: "selected evidence has been deleted",
-          background: "bg-teal-100",
-        }),
-      );
-      findDataStatus(2);
-    } catch (e) {
-      const msg = e?.response?.data?.error ?? "Failed to delete evidence";
-      dispatch(setNotification({ message: msg, background: "bg-red-100" }));
-    }
-  };
+  if (!token || !userlimaes)
+    return (
+      <div className="m-4 flex items-center justify-center">
+        <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+            <span className="text-xl">⛔</span>
+          </div>
 
-  return token && userlimaes ? (
+          <h3 className="text-sm font-semibold text-red-800">
+            Unauthorized Access
+          </h3>
+
+          <p className="mt-1 text-xs text-red-700">
+            Anda tidak memiliki akses. Silakan login terlebih dahulu.
+          </p>
+        </div>
+      </div>
+    );
+
+  return (
     <>
       <div className="mt-2 flex flex-wrap justify-evenly gap-2">
         <div className="w-[95%]">
-          <p className="mb-4 rounded-md bg-teal-500 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm">
-            Activity
+          <p className="mb-4 rounded-md bg-gradient-to-r from-teal-200 via-teal-400 to-emerald-500 px-4 py-2 text-center text-sm font-semibold shadow-lg">
+            Approval
           </p>
 
           {/* box untuk multi card schedule limaes, overflow-x scroll. di box ini terdapat multi card nya */}
@@ -564,7 +569,7 @@ const Approval = () => {
             <div className="w-full overflow-auto rounded-md border border-teal-200 bg-white p-2 shadow-sm">
               <table className="w-full text-sm text-slate-700">
                 <thead>
-                  <tr className="bg-teal-500 text-white">
+                  <tr className="bg-gradient-to-r from-teal-200 via-teal-400 to-emerald-500">
                     <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
                       Tanggal
                     </th>
@@ -763,7 +768,7 @@ const Approval = () => {
 
       {/* modal add/update */}
       {showModal && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-900 bg-opacity-80">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 bg-opacity-80">
           <div className="relative w-[95%] rounded-lg bg-white shadow-lg shadow-teal-100 md:w-[80%] lg:w-[50%]">
             {/* Header */}
             <p className="mb-2 border-b-2 border-teal-700 py-2 text-center text-base font-semibold text-teal-700">
@@ -941,8 +946,6 @@ const Approval = () => {
         </div>
       )}
     </>
-  ) : (
-    <div className="m-4 rounded bg-red-100 p-4 text-center">unauthorized</div>
   );
 };
 

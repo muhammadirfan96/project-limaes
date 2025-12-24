@@ -5,6 +5,7 @@ import { setNotification } from "../redux/notificationSlice.js";
 import { setConfirmation } from "../redux/confirmationSlice.js";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
 import { FaPencilAlt, FaTrash, FaPrint } from "react-icons/fa";
+import { setBottombarBackward } from "../redux/barSlice.js";
 
 const Activity = () => {
   const dispatch = useDispatch();
@@ -30,7 +31,10 @@ const Activity = () => {
   // modal states
   const [namaModal, setModalName] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const openModal = () => setShowModal(true);
+  const openModal = () => {
+    setShowModal(true);
+    dispatch(setBottombarBackward(true));
+  };
   const closeModal = () => {
     setShowModal(false);
     setErrForm(null);
@@ -42,6 +46,7 @@ const Activity = () => {
     setStatus(1);
     setPenilaian([]);
     setCatatan([""]);
+    dispatch(setBottombarBackward(false));
   };
 
   // data states
@@ -100,7 +105,6 @@ const Activity = () => {
       );
       closeModal();
       findData();
-      // findDataStatus0();
     } catch (e) {
       const arrError = e?.response?.data?.error?.split(",") ?? [
         "Terjadi kesalahan",
@@ -277,7 +281,7 @@ const Activity = () => {
 
   useEffect(() => {
     findData();
-  }, [token, userlimaes, limit, page, key]);
+  }, [userlimaes, limit, page, key]);
 
   const pageComponents = [];
   for (let i = 1; i <= allPage; i++) {
@@ -355,15 +359,6 @@ const Activity = () => {
         },
       );
 
-      // console.log({ scheduleRes });
-
-      // filter: hanya tampilkan schedule dengan tanggal <= hari ini
-      // const filteredSchedules = scheduleRes.data.data.filter((sch) => {
-      //   const schDate = new Date(sch.tanggal);
-      //   const today = new Date();
-      //   return schDate <= today;
-      // });
-
       // merge dengan data lokasi (handle array lokasilimaes_id)
       const mergedData = await Promise.all(
         scheduleRes.data.data.map(async (item) => {
@@ -403,9 +398,8 @@ const Activity = () => {
 
   useEffect(() => {
     findDataStatus0();
-  }, [token, userlimaes]);
+  }, [userlimaes]);
 
-  // const listPelaksana = ["Andi", "Budi", "Citra", "Dewi"];
   const [listPelaksana, setListPelaksana] = useState([]);
   const [searchListPelaksana, setSearchListPelaksana] = useState("");
   const [searchBasedListPelaksana, setSearchBasedListPelaksana] =
@@ -449,7 +443,6 @@ const Activity = () => {
           background: "bg-teal-100",
         }),
       );
-      // findBarang();
       findData();
     } catch (e) {
       const arrError = e?.response?.data?.error?.split(",") ?? [
@@ -480,11 +473,30 @@ const Activity = () => {
     }
   };
 
-  return token && userlimaes ? (
+  if (!token || !userlimaes)
+    return (
+      <div className="m-4 flex items-center justify-center">
+        <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+            <span className="text-xl">⛔</span>
+          </div>
+
+          <h3 className="text-sm font-semibold text-red-800">
+            Unauthorized Access
+          </h3>
+
+          <p className="mt-1 text-xs text-red-700">
+            Anda tidak memiliki akses. Silakan login terlebih dahulu.
+          </p>
+        </div>
+      </div>
+    );
+
+  return (
     <>
       <div className="mt-2 flex flex-wrap justify-evenly gap-2">
         <div className="w-[95%]">
-          <p className="mb-4 rounded-md bg-teal-500 px-4 py-2 text-center text-sm font-semibold text-white shadow-sm">
+          <p className="mb-4 rounded-md bg-gradient-to-r from-teal-200 via-teal-400 to-emerald-500 px-4 py-2 text-center text-sm font-semibold shadow-lg">
             Activity
           </p>
 
@@ -618,7 +630,7 @@ const Activity = () => {
             <div className="w-full overflow-auto rounded-md border border-teal-200 bg-white p-2 shadow-sm">
               <table className="w-full text-sm text-slate-700">
                 <thead>
-                  <tr className="bg-teal-500 text-white">
+                  <tr className="bg-gradient-to-r from-teal-200 via-teal-400 to-emerald-500">
                     <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
                       Tanggal
                     </th>
@@ -833,7 +845,7 @@ const Activity = () => {
 
       {/* modal add/update */}
       {showModal && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-900 bg-opacity-80">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 bg-opacity-80">
           <div className="relative w-[95%] rounded-lg bg-white shadow-lg shadow-teal-100 md:w-[80%] lg:w-[50%]">
             {/* Header */}
             <p className="mb-2 border-b-2 border-teal-700 py-2 text-center text-base font-semibold text-teal-700">
@@ -986,8 +998,6 @@ const Activity = () => {
         </div>
       )}
     </>
-  ) : (
-    <div className="m-4 rounded bg-red-100 p-4 text-center">unauthorized</div>
   );
 };
 

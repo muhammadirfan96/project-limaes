@@ -11,7 +11,7 @@ const Confirmation = () => {
   return (
     <>
       {confirmation && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900 bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-50">
           <div className="relative w-[95%] max-w-md rounded-lg bg-white p-4 shadow-lg shadow-teal-100">
             {/* Header */}
             <p className="mb-3 border-b border-teal-700 pb-1 text-center text-sm font-semibold text-teal-700">
@@ -63,7 +63,7 @@ const Notification = () => {
     <>
       {notification && (
         <div
-          className={`${notification.background} fixed right-4 top-4 z-20 rounded-md px-4 py-2 shadow-lg transition-transform duration-300`}
+          className={`${notification.background} fixed right-4 top-4 -z-40 rounded-md px-4 py-2 shadow-lg transition-transform duration-300`}
         >
           <p className="text-center text-sm font-medium">
             {notification.message}

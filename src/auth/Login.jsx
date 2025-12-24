@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { axiosDefault } from "../config/axios.js";
 import { useDispatch } from "react-redux";
 import {
@@ -11,6 +11,7 @@ import {
 import { setNotification } from "../redux/notificationSlice.js";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import { setBottombarBackward } from "../redux/barSlice.js";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -37,6 +38,7 @@ const Login = () => {
           background: "bg-teal-100",
         }),
       );
+
       closeModal();
       navigate("/");
     } catch (e) {
@@ -49,6 +51,7 @@ const Login = () => {
     setErrForm(null);
     setEmail("");
     setPassword("");
+    dispatch(setBottombarBackward(false));
   };
 
   const back = () => {
@@ -56,9 +59,13 @@ const Login = () => {
     navigate("/");
   };
 
+  useEffect(() => {
+    dispatch(setBottombarBackward(true));
+  }, []);
+
   return (
     <>
-      <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-900 bg-opacity-80">
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 bg-opacity-80">
         <div className="relative w-[95%] max-w-md rounded-lg bg-white p-6 shadow-lg shadow-teal-100">
           {/* Header */}
           <p className="mb-4 border-b border-teal-700 pb-2 text-center text-base font-semibold text-teal-700">

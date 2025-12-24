@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { axiosDefault } from "../config/axios.js";
 import { useDispatch } from "react-redux";
 import { setNotification } from "../redux/notificationSlice.js";
 import { useNavigate, useParams } from "react-router-dom";
+import { setBottombarBackward } from "../redux/barSlice.js";
 
 const ActivationUser = () => {
   const dispatch = useDispatch();
@@ -40,12 +41,17 @@ const ActivationUser = () => {
     setErrForm(null);
     setActivationToken("");
     navigate("/");
+    dispatch(setBottombarBackward(false));
   };
+
+  useEffect(() => {
+    dispatch(setBottombarBackward(true));
+  }, []);
 
   return (
     <>
       {showModal && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-900 bg-opacity-80">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 bg-opacity-80">
           <div className="relative w-[95%] max-w-md rounded-lg bg-white p-6 shadow-lg shadow-teal-100">
             {/* Header */}
             <p className="mb-4 border-b border-teal-700 pb-2 text-center text-base font-semibold text-teal-700">
