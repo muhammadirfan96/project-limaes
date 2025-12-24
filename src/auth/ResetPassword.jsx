@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { axiosDefault } from "../config/axios.js";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setNotification } from "../redux/notificationSlice.js";
 import { useNavigate, useParams } from "react-router-dom";
 import { setBottombarBackward } from "../redux/barSlice.js";
@@ -8,6 +8,9 @@ import { setBottombarBackward } from "../redux/barSlice.js";
 const ResetPassword = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const bbarBackward = useSelector((state) => state.bar.bottombarBackward);
+
   const { email } = useParams();
 
   const [resetPasswordToken, setResetPasswordToken] = useState("");
@@ -52,7 +55,7 @@ const ResetPassword = () => {
 
   useEffect(() => {
     dispatch(setBottombarBackward(true));
-  }, []);
+  }, [bbarBackward]);
 
   return (
     <>

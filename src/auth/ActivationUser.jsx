@@ -8,6 +8,9 @@ import { setBottombarBackward } from "../redux/barSlice.js";
 const ActivationUser = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const bbarBackward = useSelector((state) => state.bar.bottombarBackward);
+
   const { email } = useParams();
 
   const [activationToken, setActivationToken] = useState("");
@@ -46,7 +49,7 @@ const ActivationUser = () => {
 
   useEffect(() => {
     dispatch(setBottombarBackward(true));
-  }, []);
+  }, [bbarBackward]);
 
   return (
     <>

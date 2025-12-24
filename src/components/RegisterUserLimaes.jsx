@@ -16,6 +16,8 @@ const RegisterUserLimaes = () => {
   const uid = useSelector((state) => state.jwToken.uid);
   const userlimaes = useSelector((state) => state.userLimaes.data);
 
+  const bbarBackward = useSelector((state) => state.bar.bottombarBackward);
+
   const axiosInterceptors = axiosRT(token, expire, dispatch);
 
   const [errForm, setErrForm] = useState(null);
@@ -114,7 +116,7 @@ const RegisterUserLimaes = () => {
 
   useEffect(() => {
     token && uid && !userlimaes && dispatch(setBottombarBackward(true));
-  }, []);
+  }, [bbarBackward]);
 
   return (
     token &&

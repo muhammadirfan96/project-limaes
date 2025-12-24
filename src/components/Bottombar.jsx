@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { setBottombar, setBottombarBackward } from "../redux/barSlice.js";
+import { setBottombar } from "../redux/barSlice.js";
 import useMenu from "../config/menu.jsx";
 import BubbleBackground from "./BubbleBackground.jsx";
 
@@ -20,7 +20,7 @@ const Bottombar = () => {
     <>
       {/* CONTAINER */}
       <div
-        className={`fixed bottom-0 left-0 right-0 h-16 ${bbarBackward && "-z-10"} border-t border-teal-500/40 bg-gradient-to-r from-teal-200 via-teal-300 to-emerald-200 backdrop-blur-md transition-all duration-500 md:hidden ${bbar && "-mb-[62px]"} `}
+        className={`fixed bottom-0 left-0 right-0 h-16 ${bbarBackward && "-"}z-10 border-t border-teal-500/40 bg-gradient-to-r from-teal-200 via-teal-300 to-emerald-200 backdrop-blur-md transition-all duration-500 md:hidden ${bbar && "-mb-[62px]"} `}
       >
         {/* TOGGLE BUTTON */}
         <button

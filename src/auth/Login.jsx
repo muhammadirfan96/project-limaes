@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { axiosDefault } from "../config/axios.js";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   setToken,
   setExpire,
@@ -16,6 +16,8 @@ import { setBottombarBackward } from "../redux/barSlice.js";
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const bbarBackward = useSelector((state) => state.bar.bottombarBackward);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +63,7 @@ const Login = () => {
 
   useEffect(() => {
     dispatch(setBottombarBackward(true));
-  }, []);
+  }, [bbarBackward]);
 
   return (
     <>
