@@ -1,13 +1,13 @@
 version: "3.8"
 
 services:
-  limaes:
+  housekeeping:
     build: .
-    container_name: limaes
+    container_name: housekeeping
     environment:
-      - VIRTUAL_HOST=limaes.webpunagaya.com
+      - VIRTUAL_HOST=housekeeping.webpunagaya.com
       - VIRTUAL_PORT=4173
-      - LETSENCRYPT_HOST=limaes.webpunagaya.com
+      - LETSENCRYPT_HOST=housekeeping.webpunagaya.com
       - LETSENCRYPT_EMAIL=muhammadirfan187@outlook.com
     expose:
       - "4173"
