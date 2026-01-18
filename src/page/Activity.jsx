@@ -20,11 +20,15 @@ const Activity = () => {
 
   // form states
   const [tanggal, setTanggal] = useState("");
+  const [waktu, setWaktu] = useState("");
   const [lokasilimaes_id, setLokasilimaes_id] = useState("");
   const [pelaksana, setPelaksana] = useState([userlimaes?._id]);
   const [status, setStatus] = useState("");
   const [penilaian, setPenilaian] = useState([]);
   const [catatan, setCatatan] = useState([""]);
+  const [sasaran, setSasaran] = useState([""]);
+  const [tujuan, setTujuan] = useState([""]);
+
   const [errForm, setErrForm] = useState(null);
   const [form_id, setForm_id] = useState(null);
 
@@ -41,11 +45,14 @@ const Activity = () => {
     setForm_id(null);
     setModalName("");
     setTanggal("");
+    setWaktu("");
     setLokasilimaes_id("");
     setPelaksana([userlimaes._id]);
     setStatus(1);
     setPenilaian([]);
     setCatatan([""]);
+    setSasaran([""]);
+    setTujuan([""]);
     dispatch(setBottombarBackward(false));
   };
 
@@ -69,6 +76,7 @@ const Activity = () => {
       setModalName("input pelaksana");
       openModal();
       setTanggal(d.tanggal);
+      setWaktu(d.waktu);
       setLokasilimaes_id(d.lokasilimaes_id);
       !d.pelaksana.includes(userlimaes._id)
         ? setPelaksana([...d.pelaksana, userlimaes._id])
@@ -76,6 +84,8 @@ const Activity = () => {
       setStatus(1);
       setPenilaian(d.penilaian);
       setCatatan(d.catatan.length > 0 ? d.catatan : [""]);
+      setSasaran(d.sasaran.length > 0 ? d.sasaran : [""]);
+      setTujuan(d.tujuan.length > 0 ? d.tujuan : [""]);
     } catch (e) {
       const msg = e?.response?.data?.error ?? "Failed to fetch data";
       dispatch(setNotification({ message: msg, background: "bg-red-100" }));
@@ -93,11 +103,14 @@ const Activity = () => {
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/${id}`,
         {
           tanggal,
+          waktu,
           lokasilimaes_id,
           pelaksana,
           status,
           penilaian,
           catatan: catatan.filter((c) => c.trim() !== ""),
+          sasaran: sasaran.filter((s) => s.trim() !== ""),
+          tujuan: tujuan.filter((t) => t.trim() !== ""),
         },
       );
       dispatch(
@@ -105,6 +118,7 @@ const Activity = () => {
       );
       closeModal();
       findData();
+      findDataStatus0();
     } catch (e) {
       const arrError = e?.response?.data?.error?.split(",") ?? [
         "Terjadi kesalahan",
@@ -141,146 +155,34 @@ const Activity = () => {
   // get data
   const findData = async () => {
     try {
-      let pelaksana = [];
-
-      // role admin → semua pelaksana
-      if (role === "admin") {
-        pelaksana = [];
-      }
-
-      // role user → hanya user bersangkutan (duplikasi sesuai kebutuhan API)
-      if (role === "user") {
-        pelaksana = [userlimaes._id];
-      }
-
-      // role admin-unit → hanya pelaksana dari unit yang sama
-      if (role.includes("admin-")) {
-        const unit = role.split("-")[1];
-
-        // dapatkan bagianlimaes berdasarkan unit
-        const bagianlimaesRes = await axiosInterceptors.get(
-          `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes?unit=${unit}&limit=10000`,
-        );
-
-        if (bagianlimaesRes.data.data.length === 0) {
-          setData([]);
-          setDataStatus0([]);
-          setAllPage(0);
-          return;
-        }
-
-        // ambil semua user-limaes berdasarkan tiap bagianlimaes_id
-        const userlimaesRes = await Promise.all(
-          bagianlimaesRes.data.data.map(async (each) => {
-            try {
-              const result = await axiosInterceptors.get(
-                `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes?bagianlimaes_id=${each._id}`,
-              );
-              return result.data.data || [];
-            } catch (error) {
-              console.error(error);
-              return [];
-            }
-          }),
-        );
-
-        // gabungkan semua hasil jadi satu array flat
-        const allUserLimaes = userlimaesRes.flat();
-
-        // ambil id unik
-        const userlimaesRes_id = [
-          ...new Set(allUserLimaes.map((ul) => ul._id)),
-        ];
-
-        pelaksana = userlimaesRes_id;
-      }
-
-      // ambil schedule
       const filter = {
-        order: "desc",
+        // ...(role === "user" && {
+        pelaksana_fullname: userlimaes.fullname,
+        pelaksana_nip: userlimaes.nip,
+        // }),
+        // ...(role.includes("-") && {
+        //   bidang_unit: role.split("-")[1],
+        // }),
+        status: [1, 2],
         limit,
         page,
         key,
-        pelaksana,
-        sortBy: "tanggal",
-        status: ["1", "2"],
       };
 
       const scheduleRes = await axiosInterceptors.post(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes`,
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes/aggregate`,
         filter,
       );
 
-      const result = await Promise.all(
-        scheduleRes.data.data.map(async (item) => {
-          const [usersRes, lokasiResArr] = await Promise.allSettled([
-            // ambil semua pelaksana
-            Promise.allSettled(
-              item.pelaksana.map((id) =>
-                axiosInterceptors.get(
-                  `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes/${id}`,
-                ),
-              ),
-            ),
-            // ambil semua lokasi (karena lokasilimaes_id adalah array)
-            Promise.allSettled(
-              item.lokasilimaes_id.map((id) =>
-                axiosInterceptors.get(
-                  `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasi-limaes/${id}`,
-                ),
-              ),
-            ),
-          ]);
-
-          // helper untuk ambil fullname pelaksana
-          const extractUsers = () => {
-            if (usersRes.status !== "fulfilled") return "deleted";
-            return (
-              usersRes.value
-                .filter((u) => u.status === "fulfilled")
-                .map((u) => u.value.data?.fullname)
-                .filter(Boolean)
-                .join(", ") || "deleted"
-            );
-          };
-
-          // helper untuk ambil field dari semua lokasi
-          const extractLokasiField = (resArr, key) =>
-            resArr
-              .filter((r) => r.status === "fulfilled")
-              .map((r) => r.value.data?.[key] ?? "deleted")
-              .join(", ") || "deleted";
-
-          return {
-            ...item,
-            unit:
-              lokasiResArr.status === "fulfilled"
-                ? extractLokasiField(lokasiResArr.value, "unit")
-                : "deleted",
-            area:
-              lokasiResArr.status === "fulfilled"
-                ? extractLokasiField(lokasiResArr.value, "area")
-                : "deleted",
-            equipment:
-              lokasiResArr.status === "fulfilled"
-                ? extractLokasiField(lokasiResArr.value, "equipment")
-                : "deleted",
-            pelaksana: extractUsers(),
-          };
-        }),
-      );
-
-      setData(result);
+      setData(scheduleRes.data.data);
       setAllPage(scheduleRes.data.all_page);
     } catch (e) {
       console.error(e);
-      const msg = e?.response?.data?.error ?? e.message;
-      dispatch(setNotification({ message: msg, background: "bg-red-100" }));
     }
   };
 
   useEffect(() => {
-    findData();
+    if (userlimaes) findData();
   }, [userlimaes, limit, page, key]);
 
   const pageComponents = [];
@@ -305,117 +207,61 @@ const Activity = () => {
   const [dataStatus0, setDataStatus0] = useState([]);
 
   const findDataStatus0 = async () => {
-    if (!token || !userlimaes || !userlimaes.bagianlimaes_id) return;
-
     try {
-      let lokasilimaes_id = [];
-      let unit = "";
-      let area = "";
+      const filter = {
+        // ...(role === "user" && {
+        lokasi_unit: [userlimaes.bagianlimaes.unit],
+        lokasi_area: [userlimaes.bagianlimaes.area],
+        // }),
+        // ...(role === "user" &&
+        //   userlimaes.bagianlimaes.jabatan.startsWith("tl ") && {
+        //     lokasi_unit: userlimaes.bagianlimaes.unit,
+        //   }),
+        // ...(role.includes("-") && {
+        //   lokasi_unit: role.split("-")[1],
+        // }),
+        tanggal: `1970-01-01@${new Date().toISOString().split("T")[0]}`,
+        sortBy: "tanggal",
+        status: [0],
+        limit: 3,
+      };
 
-      // role admin → semua lokasi
-      if (role === "admin") {
-        unit = "";
-        area = "";
-        lokasilimaes_id = [];
-      }
-
-      // role user → ambil unit & area dari bagian user
-      if (role === "user") {
-        const bagianRes = await axiosInterceptors.get(
-          `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes/${userlimaes.bagianlimaes_id}`,
-        );
-        unit = bagianRes.data.unit;
-        area = bagianRes.data.area;
-      }
-
-      // role admin-unit → ambil unit dari role
-      if (role.includes("admin-")) {
-        unit = role.split("-")[1];
-        area = "";
-      }
-
-      // ambil lokasi berdasarkan unit + area
-      const lokasiRes = await axiosInterceptors.get(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasi-limaes?unit=${unit}&area=${area}&limit=10000`,
-      );
-
-      const lokasilimaes_ids = [
-        ...new Set(lokasiRes.data.data.map((ll) => ll._id)),
-      ];
-
-      if (role === "user" || role.includes("admin-")) {
-        lokasilimaes_id = lokasilimaes_ids;
-      }
-
-      // ambil schedule sesuai lokasi
       const scheduleRes = await axiosInterceptors.post(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes`,
-        {
-          sortBy: "tanggal",
-          limit: 5,
-          lokasilimaes_id,
-          status: ["0"],
-          tanggal: `1970-01-01@${new Date().toISOString().split("T")[0]}`,
-        },
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes/aggregate`,
+        filter,
       );
 
-      // merge dengan data lokasi (handle array lokasilimaes_id)
-      const mergedData = await Promise.all(
-        scheduleRes.data.data.map(async (item) => {
-          try {
-            const lokasiResArr = await Promise.allSettled(
-              item.lokasilimaes_id.map((id) =>
-                axiosInterceptors.get(
-                  `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasi-limaes/${id}`,
-                ),
-              ),
-            );
-
-            // helper untuk ambil field dari semua lokasi
-            const extractLokasiField = (resArr, key) =>
-              resArr
-                .filter((r) => r.status === "fulfilled")
-                .map((r) => r.value.data?.[key] ?? "deleted")
-                .join(", ") || "deleted";
-
-            return {
-              ...item,
-              unit: extractLokasiField(lokasiResArr, "unit"),
-              area: extractLokasiField(lokasiResArr, "area"),
-              equipment: extractLokasiField(lokasiResArr, "equipment"),
-            };
-          } catch {
-            return { ...item };
-          }
-        }),
-      );
-
-      setDataStatus0(mergedData);
+      setDataStatus0(scheduleRes.data.data);
     } catch (err) {
       console.error(err);
     }
   };
 
   useEffect(() => {
-    findDataStatus0();
+    if (userlimaes) findDataStatus0();
   }, [userlimaes]);
 
   const [listPelaksana, setListPelaksana] = useState([]);
   const [searchListPelaksana, setSearchListPelaksana] = useState("");
   const [searchBasedListPelaksana, setSearchBasedListPelaksana] =
     useState("fullname");
-  const [keyListPelaksana, setKeyListPelaksana] = useState("");
 
   const fetchListPelaksana = async () => {
-    const keyPelaksana = keyListPelaksana && `&${keyListPelaksana}`;
     try {
-      // fetch all userlimaes where bagianlimaes_id = userlimaes.bagianlimaes_id
-      const usersRes = await axiosInterceptors.get(
+      const usersRes = await axiosInterceptors.post(
         `/${import.meta.env.VITE_APP_NAME}/${
           import.meta.env.VITE_APP_VERSION
-        }/user-limaes?bagianlimaes_id=${userlimaes.bagianlimaes_id}${keyPelaksana}`,
+        }/users-limaes/aggregate`,
+        {
+          bagianlimaes_jabatan: userlimaes.bagianlimaes.jabatan,
+          bagianlimaes_atasan: userlimaes.bagianlimaes.atasan,
+          bagianlimaes_bawahan: userlimaes.bagianlimaes.bawahan,
+          bagianlimaes_unit: userlimaes.bagianlimaes.unit,
+          bagianlimaes_area: userlimaes.bagianlimaes.area,
+          fullname: searchListPelaksana,
+        },
       );
-      // const names = usersRes.data.data.map((u) => u.fullname);
+
       setListPelaksana(usersRes.data.data);
     } catch (e) {
       console.error(e);
@@ -423,10 +269,10 @@ const Activity = () => {
   };
 
   useEffect(() => {
-    if (userlimaes && userlimaes.bagianlimaes_id) {
+    if (userlimaes) {
       fetchListPelaksana();
     }
-  }, [keyListPelaksana, userlimaes, token]);
+  }, [userlimaes]);
 
   // upload evidence function
   const uploadEvidence = async (id, file) => {
@@ -507,15 +353,15 @@ const Activity = () => {
                 <div
                   key={`${schedule._id}-${schedule.createdAt}`}
                   onClick={() => handleUpdate(schedule._id)}
-                  className="min-w-[280px] cursor-pointer rounded-xl border border-slate-300 bg-white px-6 py-5 shadow-sm transition-transform duration-300 hover:scale-[1.03] hover:shadow-lg active:scale-[0.98]"
+                  className="min-w-[280px] cursor-pointer rounded-xl border border-slate-300 bg-white px-6 py-5 shadow-sm transition-transform duration-300 hover:shadow-lg"
                 >
                   {/* HEADER */}
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-base font-semibold text-slate-800">
-                      {schedule.equipment}
+                      {schedule.lokasi.map((l) => l.equipment).join(", ")}
                     </h3>
                     <span
-                      className={`rounded-full ${schedule.status === 0 && "bg-yellow-100 text-yellow-700"} ${schedule.status === 1 && "bg-green-100 text-green-700"} ${schedule.status === 2 && "bg-blue-100 text-blue-700"} px-3 py-1 text-xs font-medium`}
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${schedule.status === 0 && "bg-yellow-100 text-yellow-700"} ${schedule.status === 1 && "bg-green-100 text-green-700"} ${schedule.status === 2 && "bg-blue-100 text-blue-700"}`}
                     >
                       {schedule.status === 0 && "Terjadwal"}
                       {schedule.status === 1 && "Terlaksana"}
@@ -529,19 +375,13 @@ const Activity = () => {
                       <span className="font-medium text-slate-700">
                         Unit :{" "}
                       </span>
-                      {schedule.unit.split(",")[0]}
+                      {schedule.lokasi[0].unit}
                     </p>
                     <p>
                       <span className="font-medium text-slate-700">
                         Area :{" "}
                       </span>
-                      {schedule.area.split(",")[0]}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-700">
-                        Equipment :{" "}
-                      </span>
-                      {schedule.equipment}
+                      {schedule.lokasi[0].area}
                     </p>
                     <p>
                       <span className="font-medium text-slate-700">
@@ -553,6 +393,40 @@ const Activity = () => {
                         year: "numeric",
                       })}
                     </p>
+                    <p>
+                      <span className="font-medium text-slate-700">
+                        Waktu :{" "}
+                      </span>
+                      {schedule.waktu === 1 && "shift pagi"}
+                      {schedule.waktu === 2 && "shift sore"}
+                      {schedule.waktu === 3 && "shift malam"}
+                    </p>
+                    <div>
+                      <span className="font-medium text-slate-700">
+                        Sasaran :{" "}
+                      </span>
+                      {schedule.sasaran && schedule.sasaran.length > 0 && (
+                        <ul className="list-disc pl-5 text-xs">
+                          {schedule.sasaran.map((sch, idx) => (
+                            <li key={`${schedule._id}-sasaran-${idx}`}>
+                              {sch}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium text-slate-700">
+                        Tujuan :{" "}
+                      </span>
+                      {schedule.tujuan && schedule.tujuan.length > 0 && (
+                        <ul className="list-disc pl-5 text-xs">
+                          {schedule.tujuan.map((tuj, idx) => (
+                            <li key={`${schedule._id}-tujuan-${idx}`}>{tuj}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -635,6 +509,9 @@ const Activity = () => {
                       Tanggal
                     </th>
                     <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
+                      Waktu
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
                       Unit
                     </th>
                     <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
@@ -669,10 +546,19 @@ const Activity = () => {
                       <td className="px-3 py-2">
                         {new Date(each.tanggal).toLocaleDateString("id-ID")}
                       </td>
-                      <td className="px-3 py-2">{each.unit.split(",")[0]}</td>
-                      <td className="px-3 py-2">{each.area.split(",")[0]}</td>
-                      <td className="px-3 py-2">{each.equipment}</td>
-                      <td className="px-3 py-2">{each.pelaksana}</td>
+                      <td className="px-3 py-2">
+                        {each.waktu === 1 && "shift pagi"}
+                        {each.waktu === 2 && "shift sore"}
+                        {each.waktu === 3 && "shift malam"}
+                      </td>
+                      <td className="px-3 py-2">{each.lokasi[0].unit}</td>
+                      <td className="px-3 py-2">{each.lokasi[0].area}</td>
+                      <td className="px-3 py-2">
+                        {each.lokasi.map((l) => l.equipment).join(", ")}
+                      </td>
+                      <td className="px-3 py-2">
+                        {each.pelaksana.map((p) => p.fullname).join(", ")}
+                      </td>
                       <td className="px-3 py-2">
                         <span
                           className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${each.status === 0 && "bg-yellow-100 text-yellow-700"} ${each.status === 1 && "bg-green-100 text-green-700"} ${each.status === 2 && "bg-blue-100 text-blue-700"}`}
@@ -786,6 +672,7 @@ const Activity = () => {
                           "-"
                         )}
                       </td>
+                      {/* action */}
                       <td className="px-3 py-2">
                         <div className="flex gap-2">
                           <button
@@ -893,7 +780,7 @@ const Activity = () => {
                       value={searchListPelaksana}
                       onChange={(e) => setSearchListPelaksana(e.target.value)}
                     />
-                    <button
+                    {/* <button
                       onClick={() =>
                         setKeyListPelaksana(
                           `${searchBasedListPelaksana}=${searchListPelaksana}`,
@@ -903,7 +790,7 @@ const Activity = () => {
                       type="button"
                     >
                       <HiMiniMagnifyingGlass />
-                    </button>
+                    </button> */}
                   </div>
 
                   {/* Checkbox list */}

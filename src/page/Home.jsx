@@ -1,4 +1,4 @@
-import { SiMongodb, SiExpress, SiReact, SiNodedotjs } from "react-icons/si";
+import { FiSettings } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { axiosRT } from "../config/axios.js";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,81 +24,62 @@ const Home = () => {
   const userlimaes = useSelector((state) => state.userLimaes.data);
   const axiosInterceptors = axiosRT(token, expire, dispatch);
 
-  const [title, setTitle] = useState("");
   const [month] = useState(new Date().getMonth() + 1);
   const [year] = useState(new Date().getFullYear());
   const [day] = useState(new Date().getDate());
 
   const [scheduleData, setScheduleData] = useState([]);
-  const [lokasiList, setLokasiList] = useState([]);
-  const [viewSchedule, setViewSchedule] = useState([]);
+  const [allUnit, setAllunit] = useState([]);
+  const [unitView, setUnitView] = useState("punagaya");
+  const [allArea, setAllArea] = useState([]);
+  const [areaView, setAreaView] = useState("boiler");
+
+  const getAllLokasi = async () => {
+    try {
+      const res = await axiosInterceptors.get(
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasies-limaes/distinct`,
+      );
+      setAllunit(res.data.unit);
+      setAllArea(res.data.area);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    getAllLokasi();
+  }, [userlimaes]);
 
   // ============================
   // FETCH SCHEDULE
   // ============================
   const fetchScheduleLimaes = async () => {
-    if (!token || !userlimaes || !userlimaes.bagianlimaes_id) return;
-
     try {
-      // to make sure tanggal is in format YYYY-MM-DD with leading zeros
       const dayString = day.toString().padStart(2, "0");
       const monthString = month.toString().padStart(2, "0");
       const keytanggal = `${year}-${monthString}-${dayString}@${year}-${monthString}-${dayString}`;
 
-      // console.log({ keytanggal });
-
-      let lokasilimaes_id = [];
-      let unit = "";
-      let area = "";
-      if (role === "admin") {
-        unit = "";
-        area = "";
-        lokasilimaes_id = [];
-        setTitle("all unit");
-      }
-      if (role === "user") {
-        // 1. Ambil data bagian user
-        const bagianRes = await axiosInterceptors.get(
-          `/${import.meta.env.VITE_APP_NAME}/${
-            import.meta.env.VITE_APP_VERSION
-          }/bagian-limaes/${userlimaes.bagianlimaes_id}`,
-        );
-        unit = bagianRes.data.unit;
-        area = "";
-        setTitle(unit);
-      }
-      if (role.includes("-")) {
-        unit = role.includes("-") && role.split("-")[1];
-        area = "";
-        setTitle(unit);
-      }
-
-      // 2. Ambil lokasi berdasarkan unit + area
-      const lokasiRes = await axiosInterceptors.get(
-        `/${import.meta.env.VITE_APP_NAME}/${
-          import.meta.env.VITE_APP_VERSION
-        }/lokasi-limaes?unit=${unit}&area=${area}&limit=1000`,
-      );
-      // &area=${area}
-
-      const lokasilimaes_ids = [
-        ...new Set(lokasiRes.data.data.map((ll) => ll._id)),
-      ];
-
-      if (role === "user" || role.includes("-")) {
-        lokasilimaes_id = lokasilimaes_ids;
-      }
-
-      // 3. Ambil schedule sesuai lokasi
       const scheduleRes = await axiosInterceptors.post(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes`,
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes/aggregate`,
         {
-          lokasilimaes_id,
+          ...(role === "user" && {
+            lokasi_unit: [userlimaes.bagianlimaes.unit],
+          }),
+          ...(role === "user" &&
+          userlimaes.bagianlimaes.jabatan.startsWith("tl ")
+            ? { lokasi_area: [areaView] }
+            : { lokasi_area: [userlimaes.bagianlimaes.area] }),
+          ...(role.includes("-") && {
+            lokasi_unit: [role.split("-")[1]],
+            lokasi_area: [areaView],
+          }),
+          ...(role === "admin" && {
+            lokasi_unit: [unitView],
+            lokasi_area: [areaView],
+          }),
           tanggal: keytanggal,
         },
       );
-
-      // &tanggal=${keytanggal}
 
       setScheduleData(scheduleRes.data.data);
     } catch (err) {
@@ -106,61 +87,9 @@ const Home = () => {
     }
   };
 
-  // console.log({ scheduleData });
-
-  // ============================
-  // JOIN schedule + lokasi
-  // ============================
   useEffect(() => {
-    if (!scheduleData.length) return;
-
-    const fetchMerged = async () => {
-      try {
-        const merged = await Promise.all(
-          scheduleData.map(async (item) => {
-            try {
-              const lokasiResArr = await Promise.allSettled(
-                item.lokasilimaes_id.map((id) =>
-                  axiosInterceptors.get(
-                    `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasi-limaes/${id}`,
-                  ),
-                ),
-              );
-
-              // helper untuk ambil field dari semua lokasi
-              const extractLokasiField = (resArr, key) =>
-                resArr
-                  .filter((r) => r.status === "fulfilled")
-                  .map((r) => r.value.data?.[key] ?? "deleted")
-                  .join(", ") || "deleted";
-
-              return {
-                ...item,
-                unit: extractLokasiField(lokasiResArr, "unit"),
-                area: extractLokasiField(lokasiResArr, "area"),
-                equipment: extractLokasiField(lokasiResArr, "equipment"),
-              };
-            } catch {
-              return { ...item };
-            }
-          }),
-        );
-
-        setViewSchedule(merged);
-      } catch (err) {
-        console.error("Error merging schedule + lokasi:", err);
-      }
-    };
-
-    fetchMerged();
-  }, [scheduleData]);
-
-  // ============================
-  // Jalankan fetch ketika userlimaes siap
-  // ============================
-  useEffect(() => {
-    fetchScheduleLimaes();
-  }, [userlimaes]);
+    if (userlimaes && unitView && areaView) fetchScheduleLimaes();
+  }, [userlimaes, unitView, areaView]);
 
   // ============================
   // VIEW JIKA BELUM LOGIN
@@ -241,11 +170,11 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-slate-100 p-4">
       {/* HEADER */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white px-6 py-4 shadow-sm ring-1 ring-slate-200">
+      <div className="relative mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white px-6 py-4 shadow-sm ring-1 ring-slate-200">
         {/* Left: Title */}
         <div>
           <h1 className="text-2xl font-extrabold uppercase tracking-wide text-slate-800">
-            {title}
+            {unitView}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             {new Date().toLocaleDateString("id-ID", {
@@ -263,12 +192,53 @@ const Home = () => {
             <Time />
           </span>
         </div>
+
+        {/* absolute: left-top */}
+        {role === "admin" && (
+          <div className="absolute left-2 top-2 text-xs text-slate-400">
+            {/* Select transparan, menutupi area icon */}
+            <select
+              value={unitView}
+              onChange={(e) => setUnitView(e.target.value)}
+              className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+            >
+              {allUnit.map((unit, i) => (
+                <option key={i} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </select>
+
+            {/* Icon visual, klik tetap tembus ke select */}
+            <FiSettings className="pointer-events-none text-slate-600" />
+          </div>
+        )}
+
+        <div
+          className={`${role === "user" && !userlimaes.bagianlimaes.jabatan.startsWith("tl") && "hidden"} absolute left-6 top-2 text-xs text-slate-400`}
+        >
+          {/* Select transparan, menutupi area icon */}
+          <select
+            value={areaView}
+            onChange={(e) => setAreaView(e.target.value)}
+            className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+          >
+            {allArea.map((area, i) => (
+              <option key={i} value={area}>
+                {area}
+              </option>
+            ))}
+          </select>
+
+          {/* Icon visual, klik tetap tembus ke select */}
+          <FiSettings className="pointer-events-none text-slate-600" />
+        </div>
       </div>
 
       {/* CARD SCHEDULE */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {viewSchedule.length > 0 ? (
-          viewSchedule.map((schedule) => {
+        {scheduleData.length > 0 ? (
+          scheduleData.map((schedule) => {
             return (
               <div
                 key={schedule._id}
@@ -277,7 +247,7 @@ const Home = () => {
                 {/* TITLE */}
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="text-lg font-bold text-slate-800">
-                    {schedule.equipment}
+                    {schedule.lokasi.map((l) => l.equipment).join(", ")}
                   </h3>
 
                   {/* BADGE STATUS */}
@@ -293,24 +263,30 @@ const Home = () => {
                 {/* DETAIL */}
                 <div className="space-y-1 text-sm text-slate-600">
                   <p>
-                    <strong className="text-slate-800">Unit:</strong>{" "}
-                    {schedule.unit.split(",")[0]}
+                    <strong className="text-slate-800">Unit :</strong>{" "}
+                    {schedule.lokasi[0].unit}
                   </p>
                   <p>
-                    <strong className="text-slate-800">Area:</strong>{" "}
-                    {schedule.area.split(",")[0]}
+                    <strong className="text-slate-800">Area :</strong>{" "}
+                    {schedule.lokasi[0].area}
                   </p>
                   {/* <p>
                     <strong className="text-slate-800">Equipment:</strong>{" "}
                     {schedule.equipment}
                   </p> */}
                   <p>
-                    <strong className="text-slate-800">Tanggal:</strong>{" "}
+                    <strong className="text-slate-800">Tanggal :</strong>{" "}
                     {new Date(schedule.tanggal).toLocaleDateString("id-ID", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
                     })}
+                  </p>
+                  <p>
+                    <strong className="text-slate-800">Waktu :</strong>{" "}
+                    {schedule.waktu === 1 && "shift pagi"}
+                    {schedule.waktu === 2 && "shift sore"}
+                    {schedule.waktu === 3 && "shift malam"}
                   </p>
                 </div>
               </div>

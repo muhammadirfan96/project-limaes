@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setNotification } from "../redux/notificationSlice.js";
 import { setConfirmation } from "../redux/confirmationSlice.js";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
-import { FaPencilAlt, FaTrash } from "react-icons/fa";
+import { FaPencilAlt, FaTrash, FaPrint } from "react-icons/fa";
 import defaultPenilaian from "../config/defaultPenilaian.js";
 import { setBottombarBackward } from "../redux/barSlice.js";
 
@@ -21,10 +21,13 @@ const Approval = () => {
 
   // form states
   const [tanggal, setTanggal] = useState("");
+  const [waktu, setWaktu] = useState("");
   const [lokasilimaes_id, setLokasilimaes_id] = useState("");
   const [pelaksana, setPelaksana] = useState([userlimaes?._id]);
   const [status, setStatus] = useState("");
   const [catatan, setCatatan] = useState([""]);
+  const [sasaran, setSasaran] = useState([""]);
+  const [tujuan, setTujuan] = useState([""]);
 
   // console.log(defaultPenilaian);
 
@@ -71,11 +74,14 @@ const Approval = () => {
     setForm_id(null);
     setModalName("");
     setTanggal("");
+    setWaktu("");
     setLokasilimaes_id("");
     setPelaksana([userlimaes._id]);
     setStatus(2);
     setPenilaian(defaultPenilaian);
     setCatatan([""]);
+    setSasaran([""]);
+    setTujuan([""]);
     dispatch(setBottombarBackward(false));
   };
 
@@ -99,14 +105,16 @@ const Approval = () => {
       setModalName("catatan + penilaian");
       openModal();
       setTanggal(d.tanggal);
+      setWaktu(d.waktu);
       setLokasilimaes_id(d.lokasilimaes_id);
       setPelaksana(d.pelaksana);
       setStatus(2);
-      // console.log({ penilaian });
       d.penilaian.length === 0
         ? setPenilaian(defaultPenilaian)
         : setPenilaian(d.penilaian);
       d.catatan.length === 0 ? setCatatan([""]) : setCatatan(d.catatan);
+      setSasaran(d.sasaran.length > 0 ? d.sasaran : [""]);
+      setTujuan(d.tujuan.length > 0 ? d.tujuan : [""]);
     } catch (e) {
       const msg = e?.response?.data?.error ?? "Failed to fetch data";
       dispatch(setNotification({ message: msg, background: "bg-red-100" }));
@@ -119,17 +127,19 @@ const Approval = () => {
   };
 
   const updateData = async (id) => {
-    console.log({ tanggal, lokasilimaes_id, pelaksana, status, penilaian });
     try {
       await axiosInterceptors.patch(
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/${id}`,
         {
           tanggal,
+          waktu,
           lokasilimaes_id,
           pelaksana,
           status,
           penilaian,
           catatan: catatan.filter((c) => c.trim() !== ""),
+          sasaran: sasaran.filter((s) => s.trim() !== ""),
+          tujuan: tujuan.filter((t) => t.trim() !== ""),
         },
       );
       dispatch(
@@ -137,6 +147,7 @@ const Approval = () => {
       );
       closeModal();
       findDataStatus(2);
+      findDataStatus(1);
     } catch (e) {
       const arrError = e?.response?.data?.error?.split(",") ?? [
         "Terjadi kesalahan",
@@ -192,225 +203,48 @@ const Approval = () => {
   const [dataStatus1, setDataStatus1] = useState([]);
 
   const findDataStatus = async (status) => {
-    if (!token || !userlimaes || !userlimaes.bagianlimaes_id) return;
-
     try {
-      // const searchQuery = key && `&${key}`;
-
-      let pelaksana = [];
-      role === "admin" && (pelaksana = []);
-
-      if (role === "user") {
-        const bagianlimaesResult = await axiosInterceptors.get(
-          `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes/${userlimaes.bagianlimaes_id}`,
-        );
-
-        const bagianlimaesRes = await axiosInterceptors.get(
-          `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes?limit=10000&atasan=${bagianlimaesResult.data.jabatan}`,
-        );
-
-        if (bagianlimaesRes.data.data.length === 0) {
-          setDataStatus2([]);
-          setDataStatus1([]);
-          setAllPage(0);
-          return;
-        }
-
-        // ambil semua user-limaes berdasarkan tiap bagianlimaes_id
-        const userlimaesRes = await Promise.all(
-          bagianlimaesRes.data.data.map(async (each) => {
-            try {
-              const result = await axiosInterceptors.get(
-                `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes?bagianlimaes_id=${each._id}`,
-              );
-              return result.data.data || [];
-            } catch (error) {
-              console.error(error);
-              return [];
-            }
-          }),
-        );
-
-        // gabungkan semua hasil jadi satu array flat
-        const allUserLimaes = userlimaesRes.flat();
-
-        // ambil id unik
-        const userlimaesRes_id = [
-          ...new Set(allUserLimaes.map((ul) => ul._id)),
-        ];
-
-        pelaksana = userlimaesRes_id;
-      }
-
-      // role admin-unit → hanya pelaksana dari unit yang sama
-      if (role.includes("admin-")) {
-        const unit = role.split("-")[1];
-
-        // dapatkan bagianlimaes berdasarkan unit
-        const bagianlimaesRes = await axiosInterceptors.get(
-          `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes?unit=${unit}&limit=10000`,
-        );
-
-        if (bagianlimaesRes.data.data.length === 0) {
-          setDataStatus2([]);
-          setDataStatus1([]);
-          setAllPage(0);
-          return;
-        }
-
-        // ambil semua user-limaes berdasarkan tiap bagianlimaes_id
-        const userlimaesRes = await Promise.all(
-          bagianlimaesRes.data.data.map(async (each) => {
-            try {
-              const result = await axiosInterceptors.get(
-                `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes?bagianlimaes_id=${each._id}`,
-              );
-              return result.data.data || [];
-            } catch (error) {
-              console.error(error);
-              return [];
-            }
-          }),
-        );
-
-        // gabungkan semua hasil jadi satu array flat
-        const allUserLimaes = userlimaesRes.flat();
-
-        // ambil id unik
-        const userlimaesRes_id = [
-          ...new Set(allUserLimaes.map((ul) => ul._id)),
-        ];
-
-        pelaksana = userlimaesRes_id;
-      }
-
       const filter = {
         order: "desc",
         ...(status === 2 && { limit }),
+        ...(status === 1 && { limit: 10 }),
         ...(status === 2 && { page }),
         ...(status === 2 && { key }),
-        pelaksana,
-        status: [`${status}`],
+        ...(role === "user" && {
+          bagian_jabatan: userlimaes.bagianlimaes.bawahan,
+        }),
+        ...(role.includes("-") && {
+          bidang_unit: [role.split("-")[1]],
+        }),
+        status: [status],
+        evidence: true,
       };
 
       const scheduleRes = await axiosInterceptors.post(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes`,
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes/aggregate`,
         filter,
       );
 
-      // console.log({ scheduleRes });
-
-      // hanya jadwal yang punya evidence
-      const filteredSchedules = scheduleRes.data.data.filter(
-        (sch) => Array.isArray(sch.evidence) && sch.evidence.length > 0,
-      );
-
-      // 🔥 merge Lokasi + User (pelaksana)
-      const mergedData = await Promise.all(
-        filteredSchedules.map(async (item) => {
-          const [usersRes, lokasiResArr] = await Promise.allSettled([
-            // ambil semua pelaksana
-            Promise.allSettled(
-              item.pelaksana.map((id) =>
-                axiosInterceptors.get(
-                  `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes/${id}`,
-                ),
-              ),
-            ),
-            // ambil semua lokasi (karena lokasilimaes_id adalah array)
-            Promise.allSettled(
-              item.lokasilimaes_id.map((id) =>
-                axiosInterceptors.get(
-                  `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasi-limaes/${id}`,
-                ),
-              ),
-            ),
-          ]);
-
-          // helper untuk ambil fullname pelaksana
-          const extractUsers = () => {
-            if (usersRes.status !== "fulfilled") return "deleted";
-            return (
-              usersRes.value
-                .filter((u) => u.status === "fulfilled")
-                .map((u) => u.value.data?.fullname)
-                .filter(Boolean)
-                .join(", ") || "deleted"
-            );
-          };
-
-          // helper untuk ambil field dari semua lokasi
-          const extractLokasiField = (resArr, key) =>
-            resArr
-              .filter((r) => r.status === "fulfilled")
-              .map((r) => r.value.data?.[key] ?? "deleted")
-              .join(", ") || "deleted";
-
-          return {
-            ...item,
-            unit:
-              lokasiResArr.status === "fulfilled"
-                ? extractLokasiField(lokasiResArr.value, "unit")
-                : "deleted",
-            area:
-              lokasiResArr.status === "fulfilled"
-                ? extractLokasiField(lokasiResArr.value, "area")
-                : "deleted",
-            equipment:
-              lokasiResArr.status === "fulfilled"
-                ? extractLokasiField(lokasiResArr.value, "equipment")
-                : "deleted",
-            pelaksana: extractUsers(),
-          };
-        }),
-      );
-
       // status 1 = data selesai → disimpan ke setDataStatus1
-      if (status === 1) setDataStatus1(mergedData);
+      if (status === 1) setDataStatus1(scheduleRes.data.data);
 
       // status 2 = masih berjalan → disimpan ke setDataStatus2
       if (status === 2) {
-        setDataStatus2(mergedData);
+        setDataStatus2(scheduleRes.data.data);
         setAllPage(scheduleRes.data.all_page);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
     }
   };
 
   useEffect(() => {
-    findDataStatus(1);
+    if (userlimaes) findDataStatus(1);
   }, [userlimaes]);
 
   useEffect(() => {
-    findDataStatus(2);
+    if (userlimaes) findDataStatus(2);
   }, [userlimaes, limit, page, key]);
-
-  // upload evidence function
-  const uploadEvidence = async (id, file) => {
-    try {
-      const formData = new FormData();
-      formData.append("evidence", file);
-      await axiosInterceptors.patch(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/${id}/upload-evidence`,
-        formData,
-      );
-      dispatch(
-        setNotification({
-          message: "selected data has been updated",
-          background: "bg-teal-100",
-        }),
-      );
-      findDataStatus(2);
-    } catch (e) {
-      const arrError = e?.response?.data?.error?.split(",") ?? [
-        "Terjadi kesalahan",
-      ];
-      dispatch(
-        setNotification({ message: arrError, background: "bg-red-100" }),
-      );
-    }
-  };
 
   if (!token || !userlimaes)
     return (
@@ -446,12 +280,12 @@ const Approval = () => {
                 <div
                   key={`${schedule._id}-${schedule.createdAt}`}
                   onClick={() => handleUpdate(schedule._id)}
-                  className="min-w-[280px] cursor-pointer rounded-xl border border-slate-300 bg-white px-6 py-5 shadow-sm transition-transform duration-300 hover:scale-[1.03] hover:shadow-lg active:scale-[0.98]"
+                  className="min-w-[280px] cursor-pointer rounded-xl border border-slate-300 bg-white px-6 py-5 shadow-sm transition-transform duration-300 hover:shadow-lg"
                 >
                   {/* HEADER */}
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-base font-semibold text-slate-800">
-                      {schedule.equipment}
+                      {schedule.lokasi.map((l) => l.equipment).join(", ")}
                     </h3>
                     <span
                       className={`rounded-full ${schedule.status === 0 && "bg-yellow-100 text-yellow-700"} ${schedule.status === 1 && "bg-green-100 text-green-700"} ${schedule.status === 2 && "bg-blue-100 text-blue-700"} px-3 py-1 text-xs font-medium`}
@@ -468,19 +302,13 @@ const Approval = () => {
                       <span className="font-medium text-slate-700">
                         Unit :{" "}
                       </span>
-                      {schedule.unit.split(",")[0]}
+                      {schedule.lokasi[0].unit}
                     </p>
                     <p>
                       <span className="font-medium text-slate-700">
                         Area :{" "}
                       </span>
-                      {schedule.area.split(",")[0]}
-                    </p>
-                    <p>
-                      <span className="font-medium text-slate-700">
-                        Equipment :{" "}
-                      </span>
-                      {schedule.equipment}
+                      {schedule.lokasi[0].area}
                     </p>
                     <p>
                       <span className="font-medium text-slate-700">
@@ -492,6 +320,74 @@ const Approval = () => {
                         year: "numeric",
                       })}
                     </p>
+                    <p>
+                      <span className="font-medium text-slate-700">
+                        Waktu :{" "}
+                      </span>
+                      {schedule.waktu === 1 && "shift pagi"}
+                      {schedule.waktu === 2 && "shift sore"}
+                      {schedule.waktu === 3 && "shift malam"}
+                    </p>
+                    <div>
+                      <span className="font-medium text-slate-700">
+                        Sasaran :{" "}
+                      </span>
+                      {schedule.sasaran && schedule.sasaran.length > 0 && (
+                        <ul className="list-disc pl-5 text-xs">
+                          {schedule.sasaran.map((sch, idx) => (
+                            <li key={`${schedule._id}-sasaran-${idx}`}>
+                              {sch}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium text-slate-700">
+                        Tujuan :{" "}
+                      </span>
+                      {schedule.tujuan && schedule.tujuan.length > 0 && (
+                        <ul className="list-disc pl-5 text-xs">
+                          {schedule.tujuan.map((tuj, idx) => (
+                            <li key={`${schedule._id}-tujuan-${idx}`}>{tuj}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium text-slate-700">
+                        Pelaksana :{" "}
+                      </span>
+                      {schedule.pelaksana.map((p) => p.fullname).join(", ")}
+                    </div>
+                    <div>
+                      <span className="font-medium text-slate-700">
+                        Evidence :{" "}
+                      </span>
+                      {schedule.evidence && schedule.evidence.length > 0 && (
+                        <div className="flex items-center gap-3">
+                          {schedule.evidence.map((path, idx) => (
+                            <div
+                              key={`${schedule._id}-${idx}`}
+                              className="relative inline-block"
+                            >
+                              {/* Klik gambar buka tab baru */}
+                              <a
+                                href={`${import.meta.env.VITE_API_URL}/${path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <img
+                                  src={`${import.meta.env.VITE_API_URL}/${path}`}
+                                  alt={`Evidence ${idx + 1}`}
+                                  className="h-12 w-12 cursor-pointer rounded border border-teal-300 object-cover"
+                                />
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -574,6 +470,9 @@ const Approval = () => {
                       Tanggal
                     </th>
                     <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
+                      Waktu
+                    </th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
                       Unit
                     </th>
                     <th className="whitespace-nowrap px-3 py-2 text-left font-semibold">
@@ -608,10 +507,19 @@ const Approval = () => {
                       <td className="px-3 py-2">
                         {new Date(each.tanggal).toLocaleDateString("id-ID")}
                       </td>
-                      <td className="px-3 py-2">{each.unit.split(",")[0]}</td>
-                      <td className="px-3 py-2">{each.area.split(",")[0]}</td>
-                      <td className="px-3 py-2">{each.equipment}</td>
-                      <td className="px-3 py-2">{each.pelaksana}</td>
+                      <td className="px-3 py-2">
+                        {each.waktu === 1 && "shift pagi"}
+                        {each.waktu === 2 && "shift sore"}
+                        {each.waktu === 3 && "shift malam"}
+                      </td>
+                      <td className="px-3 py-2">{each.lokasi[0].unit}</td>
+                      <td className="px-3 py-2">{each.lokasi[0].area}</td>
+                      <td className="px-3 py-2">
+                        {each.lokasi.map((l) => l.equipment).join(", ")}
+                      </td>
+                      <td className="px-3 py-2">
+                        {each.pelaksana.map((p) => p.fullname).join(", ")}
+                      </td>
                       <td className="px-3 py-2">
                         <span
                           className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${each.status === 0 && "bg-yellow-100 text-yellow-700"} ${each.status === 1 && "bg-green-100 text-green-700"} ${each.status === 2 && "bg-blue-100 text-blue-700"}`}
@@ -660,7 +568,7 @@ const Approval = () => {
                             {/* Tombol upload tambahan */}
                             {role === "admin" && (
                               <>
-                                <label
+                                {/* <label
                                   htmlFor={`upload_${each._id}`}
                                   className="flex h-12 w-12 cursor-pointer items-center justify-center rounded border border-dashed border-teal-400 text-teal-500 hover:bg-teal-50"
                                 >
@@ -679,7 +587,7 @@ const Approval = () => {
                                       );
                                     }
                                   }}
-                                />
+                                /> */}
                               </>
                             )}
                           </div>
@@ -725,9 +633,10 @@ const Approval = () => {
                           "-"
                         )}
                       </td>
+                      {/* action */}
                       <td className="px-3 py-2">
                         <div className="flex gap-2">
-                          <button
+                          {/* <button
                             disabled={role !== "admin"}
                             onClick={() => handleUpdate(each._id)}
                             className={`rounded border p-2 text-xs transition-colors duration-200 ${
@@ -737,7 +646,7 @@ const Approval = () => {
                             } disabled:opacity-50`}
                           >
                             <FaPencilAlt />
-                          </button>
+                          </button> */}
                           {role === "admin" && (
                             <button
                               disabled={role !== "admin"}
@@ -751,6 +660,22 @@ const Approval = () => {
                               <FaTrash />
                             </button>
                           )}
+                          <button
+                            disabled={each.status !== 2}
+                            onClick={() =>
+                              window.open(
+                                `${import.meta.env.VITE_API_URL}/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/pdf/${each._id}`,
+                                "_blank",
+                              )
+                            }
+                            className={`rounded border p-2 text-xs transition-colors duration-200 ${
+                              each.status === 1
+                                ? "border-blue-600 text-blue-700 hover:bg-blue-600 hover:text-white"
+                                : "bg-blue-600 text-white"
+                            } disabled:opacity-50`}
+                          >
+                            <FaPrint />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -792,6 +717,10 @@ const Approval = () => {
               )}
 
               <form onSubmit={handleSubmit} className="mx-auto space-y-4">
+                {/* pelaksana */}
+                {/* {pelaksana.map((p) => p.)} */}
+                {/* evidence */}
+
                 {/* catatan */}
                 <div className="rounded-lg border border-teal-200 bg-white p-3 shadow-sm">
                   <div className="relative mb-3 flex items-center justify-between border-b border-teal-300 pb-1">

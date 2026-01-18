@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { setNotification } from "../redux/notificationSlice.js";
 import { setUserLimaes } from "../redux/userlimaesSlice.js";
 import { setBottombarBackward } from "../redux/barSlice.js";
-import { use } from "react";
 
 const RegisterUserLimaes = () => {
   const dispatch = useDispatch();
@@ -27,27 +26,45 @@ const RegisterUserLimaes = () => {
   const [bagianlimaes_id, setBagianLimaes_id] = useState("");
   const [nomor_hp, setNomorHp] = useState("");
 
-  // console.log({ userlimaes });
+  const [listBagianUnit, setListBagianUnit] = useState([]);
+  const [listBagianArea, setListBagianArea] = useState([]);
+  const [bagianUnit, setBagianUnit] = useState("");
+  const [bagianArea, setBagianArea] = useState("");
 
-  const findUserLimaes = async () => {
+  const bagianResult = async () => {
     try {
-      const user_limaes = await axiosInterceptors.get(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes?user_id=${uid}`,
+      const res = await axiosInterceptors.get(
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagians-limaes/distinct`,
       );
-      dispatch(setUserLimaes(user_limaes.data.data[0]));
-    } catch (e) {
-      const arrError = e?.response?.data?.error?.split(",") ?? [
-        "Terjadi kesalahan",
-      ];
-      dispatch(
-        setNotification({ message: arrError[0], background: "bg-red-100" }),
-      );
+
+      setListBagianUnit(res.data.unit);
+      setListBagianArea(res.data.area);
+    } catch (error) {
+      console.error(error);
     }
   };
 
   useEffect(() => {
-    if (token && uid) findUserLimaes();
-  }, [uid]);
+    bagianResult();
+  }, [userlimaes]);
+
+  const findUserLimaes = async () => {
+    try {
+      const user_limaes = await axiosInterceptors.post(
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/users-limaes/aggregate`,
+        {
+          users_email: username,
+        },
+      );
+      dispatch(setUserLimaes(user_limaes.data.data[0]));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    if (username) findUserLimaes();
+  }, [username]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -59,7 +76,7 @@ const RegisterUserLimaes = () => {
       const response = await axiosInterceptors.post(
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes`,
         {
-          user_id: uid,
+          user_id: username,
           nip,
           fullname,
           bagianlimaes_id,
@@ -90,33 +107,24 @@ const RegisterUserLimaes = () => {
 
   const [bagianlimaes, setBagianLimaes] = useState([]);
 
-  // filter
-  const [unitFilter, setUnitFilter] = useState("");
-  const [areaFilter, setAreaFilter] = useState("");
-
   const findBagian = async () => {
     try {
       const response = await axiosInterceptors.get(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes?unit=${unitFilter}&area=${areaFilter}&limit=10000`,
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes?unit=${bagianUnit}&area=${bagianArea}`,
       );
       setBagianLimaes(response.data.data);
     } catch (e) {
-      const arrError = e?.response?.data?.error?.split(",") ?? [
-        "Terjadi kesalahan",
-      ];
-      dispatch(
-        setNotification({ message: arrError[0], background: "bg-red-100" }),
-      );
+      console.error(e);
     }
   };
 
   useEffect(() => {
-    findBagian();
-  }, [uid, unitFilter, areaFilter]);
+    if (bagianUnit && bagianArea) findBagian();
+  }, [username, bagianUnit, bagianArea]);
 
   useEffect(() => {
     token &&
-      uid &&
+      username &&
       !userlimaes &&
       !bbarBackward &&
       dispatch(setBottombarBackward(true));
@@ -124,7 +132,7 @@ const RegisterUserLimaes = () => {
 
   return (
     token &&
-    uid &&
+    username &&
     !userlimaes && (
       <>
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 bg-opacity-80">
@@ -166,39 +174,35 @@ const RegisterUserLimaes = () => {
                 <div className="flex">
                   {/* Unit Filter */}
                   <select
-                    value={unitFilter}
-                    onChange={(e) => setUnitFilter(e.target.value)}
+                    value={bagianUnit}
+                    onChange={(e) => setBagianUnit(e.target.value)}
                     className="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
                   >
                     <option value="">Select Unit</option>
-                    {[...new Set(bagianlimaes.map((item) => item.unit))].map(
-                      (each, i) => (
-                        <option key={i} value={each}>
-                          {each}
-                        </option>
-                      ),
-                    )}
+                    {listBagianUnit.map((each, i) => (
+                      <option key={i} value={each}>
+                        {each}
+                      </option>
+                    ))}
                   </select>
 
                   {/* Area Filter */}
                   <select
-                    value={areaFilter}
-                    onChange={(e) => setAreaFilter(e.target.value)}
+                    value={bagianArea}
+                    onChange={(e) => setBagianArea(e.target.value)}
                     className="w-full rounded-md border border-slate-300 p-2 text-sm focus:border-teal-500 focus:ring focus:ring-teal-200"
                   >
                     <option value="">Select Area</option>
-                    {[...new Set(bagianlimaes.map((item) => item.area))].map(
-                      (each, i) => (
-                        <option key={i} value={each}>
-                          {each}
-                        </option>
-                      ),
-                    )}
+                    {listBagianArea.map((each, i) => (
+                      <option key={i} value={each}>
+                        {each}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 {/* Bagian Limaes */}
-                {unitFilter && areaFilter && (
+                {bagianUnit && bagianArea && (
                   <div className="flex gap-2">
                     <select
                       value={bagianlimaes_id}

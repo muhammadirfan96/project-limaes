@@ -17,29 +17,79 @@ const Schedule = () => {
 
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
-  const [limaesData, setLimaesData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const shifts = ["Shift Pagi", "Shift Sore", "Shift Malam"];
+  const monthNames = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ];
+
+  const defSasaran =
+    "Terwujudnya area kerja yang bebas dari material tidak terpakai, penataan peralatan yang teridentifikasi secara visual, serta kondisi mesin dan lantai yang bersih dari kontaminasi (debu/oli) guna memudahkan inspeksi cepat terhadap setiap ketidaknormalan operasional pada peralatan dan sekitarnya";
+
+  const defTujuan =
+    "Untuk menjamin keselamatan kerja dengan mengeliminasi potensi bahaya, meningkatkan keandalan pembangkit melalui deteksi dini kerusakan pada mesin yang bersih, serta mengoptimalkan produktivitas dengan menghilangkan pemborosan waktu dalam mencari peralatan atau material saat operasional maupun pemeliharaan";
+
+  const [listLokasiUnit, setListLokasiUnit] = useState([]);
+  const [listLokasiArea, setListLokasiArea] = useState([]);
+  const [lokasiUnit, setLokasiUnit] = useState("");
+  const [lokasiArea, setLokasiArea] = useState("");
+
+  const lokasiResult = async () => {
+    try {
+      const res = await axiosInterceptors.get(
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasies-limaes/distinct`,
+      );
+
+      if (role !== "admin") {
+        setListLokasiUnit([role.split("-")[1]]);
+        setListLokasiArea(res.data.area);
+      } else if (role === "admin") {
+        setListLokasiUnit(res.data.unit);
+        setListLokasiArea(res.data.area);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    lokasiResult();
+  }, [userlimaes]);
 
   // FORM STATE
   const [errForm, setErrForm] = useState(null);
   const [form_id, setForm_id] = useState(null);
   const [tanggal, setTanggal] = useState("");
-  // const [lokasilimaes_id, setLokasilimaes_id] = useState("");
+  const [lokasilimaes_id, setLokasilimaes_id] = useState([]); // menjadi array
   const [pelaksana, setPelaksana] = useState([]);
   const [status, setStatus] = useState("");
   const [penilaian, setPenilaian] = useState([]);
+  const [waktu, setWaktu] = useState(1);
+  const [sasaran, setSasaran] = useState([defSasaran]);
+  const [tujuan, setTujuan] = useState([defTujuan]);
 
   // ==========================
   // 🔹 UTIL & FETCH DATA
   // ==========================
   const daysInMonth = (month, year) => new Date(year, month, 0).getDate();
-  const [keylokasilimaes_id, setKeylokasilimaes_id] = useState([]);
 
   // ============
   const [schedule, setSchedule] = useState([]);
 
   const findLimaes = async () => {
-    if (!keylokasilimaes_id.length) {
+    if (!lokasiUnit || !lokasiArea) {
       setSchedule([]);
       setLoading(false);
       return;
@@ -51,17 +101,17 @@ const Schedule = () => {
     const totalDays = daysInMonth(month, year);
     const tanggal = `${year}-${monthString}-01@${year}-${monthString}-${totalDays}`;
 
-    const lokasilimaes_id = keylokasilimaes_id;
-
     // ambil schedule
     const filter = {
-      limit: 31,
-      lokasilimaes_id,
+      lokasi_unit: [lokasiUnit],
+      lokasi_area: [lokasiArea],
       tanggal,
+      waktu: [waktu],
+      limit: totalDays,
     };
 
     const res = await axiosInterceptors.post(
-      `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes`,
+      `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedules-limaes/aggregate`,
       filter,
     );
 
@@ -86,15 +136,7 @@ const Schedule = () => {
 
   useEffect(() => {
     findLimaes();
-  }, [year, month, keylokasilimaes_id]);
-
-  const toLocalDateTime = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const offset = date.getTimezoneOffset();
-    const localDate = new Date(date.getTime() - offset * 60 * 1000);
-    return localDate.toISOString().slice(0, 16);
-  };
+  }, [year, month, lokasiUnit, lokasiArea, waktu]);
 
   // ==========================
   // 🔹 MODAL HANDLING
@@ -111,11 +153,14 @@ const Schedule = () => {
     setShowModal(false);
     setErrForm(null);
     setTanggal("");
+    setWaktu(1);
     setLokasilimaes_id("");
     setKeyEquipmentLokasiLimaes("");
     setPelaksana([]);
     setStatus("");
     setPenilaian([]);
+    setSasaran([defSasaran]);
+    setTujuan([defTujuan]);
     dispatch(setBottombarBackward(false));
   };
 
@@ -144,10 +189,13 @@ const Schedule = () => {
 
       openModal();
       setTanggal(oldData.tanggal);
+      setWaktu(oldData.waktu);
       setLokasilimaes_id(oldData.lokasilimaes_id);
       setPelaksana(oldData.pelaksana);
       setStatus(oldData.status);
       setPenilaian(oldData.penilaian);
+      setSasaran(oldData.sasaran.length > 0 ? oldData.sasaran : [defSasaran]);
+      setTujuan(oldData.tujuan.length > 0 ? oldData.tujuan : [defTujuan]);
     } catch (err) {
       dispatch(
         setNotification({
@@ -167,7 +215,13 @@ const Schedule = () => {
     try {
       await axiosInterceptors.post(
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes`,
-        { tanggal, lokasilimaes_id },
+        {
+          tanggal,
+          lokasilimaes_id,
+          waktu,
+          sasaran: sasaran.filter((s) => s.trim() !== ""),
+          tujuan: tujuan.filter((t) => t.trim() !== ""),
+        },
       );
       dispatch(
         setNotification({
@@ -186,7 +240,16 @@ const Schedule = () => {
     try {
       await axiosInterceptors.patch(
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/${id}`,
-        { tanggal, lokasilimaes_id, pelaksana, status, penilaian },
+        {
+          tanggal,
+          lokasilimaes_id,
+          pelaksana,
+          status,
+          penilaian,
+          waktu,
+          sasaran: sasaran.filter((s) => s.trim() !== ""),
+          tujuan: tujuan.filter((t) => t.trim() !== ""),
+        },
       );
       dispatch(
         setNotification({
@@ -206,47 +269,22 @@ const Schedule = () => {
   // ==========================
   const [listLokasiLimaes, setListLokasilimaes] = useState([]);
   const [keyEquipmentLokasiLimaes, setKeyEquipmentLokasiLimaes] = useState("");
-  const [keyUnitLokasiLimaes, setKeyUnitLokasiLimaes] = useState("");
-  const [keyAreaLokasiLimaes, setKeyAreaLokasiLimaes] = useState("");
-
-  const [lokasilimaes_id, setLokasilimaes_id] = useState([]); // menjadi array
-
-  useEffect(() => {
-    if (role.includes("-")) {
-      setKeyUnitLokasiLimaes(role.split("-")[1]);
-    }
-  }, []);
 
   const findLokasiLimaes = async () => {
     try {
       const res = await axiosInterceptors.get(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasi-limaes?unit=${keyUnitLokasiLimaes}&area=${keyAreaLokasiLimaes}&equipment=${keyEquipmentLokasiLimaes}&limit=10000`,
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasi-limaes?unit=${lokasiUnit}&area=${lokasiArea}&equipment=${keyEquipmentLokasiLimaes}`,
       );
-
-      const lokasilimaes_ids = [
-        ...new Set(res.data.data.map((item) => item._id)),
-      ];
-
-      !keyUnitLokasiLimaes || !keyAreaLokasiLimaes
-        ? setKeylokasilimaes_id([])
-        : setKeylokasilimaes_id(lokasilimaes_ids);
 
       setListLokasilimaes(res.data.data);
     } catch (error) {
-      dispatch(
-        setNotification({
-          message:
-            error?.response?.data?.error?.split(",")?.[0] ??
-            "Error loading lokasi",
-          background: "bg-red-100",
-        }),
-      );
+      console.error(error);
     }
   };
 
   useEffect(() => {
     findLokasiLimaes();
-  }, [keyUnitLokasiLimaes, keyAreaLokasiLimaes, keyEquipmentLokasiLimaes]);
+  }, [lokasiUnit, lokasiArea, keyEquipmentLokasiLimaes]);
 
   // ==========================
   // 🔹 RENDER
@@ -282,33 +320,29 @@ const Schedule = () => {
           {/* Filter Controls */}
           <div className="mb-4 flex flex-wrap justify-center gap-2">
             <select
-              value={keyUnitLokasiLimaes}
-              onChange={(e) => setKeyUnitLokasiLimaes(e.target.value)}
+              value={lokasiUnit}
+              onChange={(e) => setLokasiUnit(e.target.value)}
               className="rounded border border-teal-300 px-2 py-1 text-sm"
             >
-              <option value="">All Unit</option>
-              {[...new Set(listLokasiLimaes.map((item) => item.unit))].map(
-                (each, i) => (
-                  <option key={i} value={each}>
-                    {each}
-                  </option>
-                ),
-              )}
+              <option value="">Select Unit</option>
+              {listLokasiUnit.map((each, i) => (
+                <option key={i} value={each}>
+                  {each}
+                </option>
+              ))}
             </select>
 
             <select
-              value={keyAreaLokasiLimaes}
-              onChange={(e) => setKeyAreaLokasiLimaes(e.target.value)}
+              value={lokasiArea}
+              onChange={(e) => setLokasiArea(e.target.value)}
               className="rounded border border-teal-300 px-2 py-1 text-sm"
             >
-              <option value="">All Area</option>
-              {[...new Set(listLokasiLimaes.map((item) => item.area))].map(
-                (each, i) => (
-                  <option key={i} value={each}>
-                    {each}
-                  </option>
-                ),
-              )}
+              <option value="">Select Area</option>
+              {listLokasiArea.map((each, i) => (
+                <option key={i} value={each}>
+                  {each}
+                </option>
+              ))}
             </select>
 
             <select
@@ -316,9 +350,9 @@ const Schedule = () => {
               onChange={(e) => setMonth(parseInt(e.target.value))}
               className="rounded border border-teal-300 px-2 py-1 text-sm"
             >
-              {[...Array(12)].map((_, i) => (
+              {monthNames.map((name, i) => (
                 <option key={i + 1} value={i + 1}>
-                  {i + 1}
+                  {name}
                 </option>
               ))}
             </select>
@@ -331,6 +365,18 @@ const Schedule = () => {
               {[...Array(11)].map((_, i) => (
                 <option key={2025 + i} value={2025 + i}>
                   {2025 + i}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={waktu}
+              onChange={(e) => setWaktu(parseInt(e.target.value))}
+              className="rounded border border-teal-300 px-2 py-1 text-sm"
+            >
+              {shifts.map((shift, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {shift}
                 </option>
               ))}
             </select>
@@ -391,12 +437,12 @@ const Schedule = () => {
               )}
 
               <form onSubmit={handleSubmit}>
-                <p className="mb-2 rounded-lg border border-teal-200 bg-white p-2 shadow-sm">
+                <p className="mb-2 rounded-lg border border-teal-200 bg-white p-2 text-sm shadow-sm">
                   {tanggal.split("T")[0]}
                 </p>
 
                 {/* Lokasi */}
-                <div className="rounded-lg border border-teal-200 bg-white p-3 shadow-sm">
+                <div className="mb-2 rounded-lg border border-teal-200 bg-white p-3 shadow-sm">
                   <p className="relative mb-3 border-b border-teal-300 pb-1 text-sm font-medium text-teal-700">
                     Lokasi / Equipment
                     <select className="absolute right-0 rounded border border-teal-300 px-2 py-1 text-xs text-teal-700">
@@ -415,12 +461,12 @@ const Schedule = () => {
                         setKeyEquipmentLokasiLimaes(e.target.value)
                       }
                     />
-                    <button
+                    {/* <button
                       type="button"
                       className="rounded bg-green-600 p-2 text-white hover:bg-green-700"
                     >
                       <HiMiniMagnifyingGlass />
-                    </button>
+                    </button> */}
                   </div>
 
                   {/* Checkbox list (scrollable) */}
@@ -450,9 +496,111 @@ const Schedule = () => {
                   </div>
                 </div>
 
+                <div className="flex w-full flex-wrap justify-between text-slate-600">
+                  {/* sasaran */}
+                  <div className="mb-2 w-full rounded-lg border border-teal-200 bg-white p-3 shadow-sm md:w-[49%]">
+                    <div className="relative mb-3 flex items-center justify-between border-b border-teal-300 pb-1">
+                      <p className="text-sm font-medium text-teal-700">
+                        Sasaran
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setSasaran([...sasaran, ""])}
+                        className="text-xs font-bold text-teal-600 hover:text-teal-800"
+                      >
+                        + Tambah Baris
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {sasaran.map((item, index) => (
+                        <div key={index} className="flex gap-2">
+                          <textarea
+                            value={item}
+                            onChange={(e) => {
+                              const newSasaran = [...sasaran];
+                              newSasaran[index] = e.target.value;
+                              setSasaran(newSasaran);
+                            }}
+                            placeholder={`Sasaran ke-${index + 1}`}
+                            className="w-full rounded border border-teal-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+                            rows="2"
+                          />
+
+                          {/* Tombol Hapus: Hanya muncul jika list lebih dari 1 */}
+                          {sasaran.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newSasaran = sasaran.filter(
+                                  (_, i) => i !== index,
+                                );
+                                setSasaran(newSasaran);
+                              }}
+                              className="flex items-center justify-center rounded border border-red-200 bg-red-50 px-2 text-red-500 hover:bg-red-100"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* tujuan */}
+                  <div className="mb-2 w-full rounded-lg border border-teal-200 bg-white p-3 shadow-sm md:w-[49%]">
+                    <div className="relative mb-3 flex items-center justify-between border-b border-teal-300 pb-1">
+                      <p className="text-sm font-medium text-teal-700">
+                        Tujuan
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setTujuan([...tujuan, ""])}
+                        className="text-xs font-bold text-teal-600 hover:text-teal-800"
+                      >
+                        + Tambah Baris
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {tujuan.map((item, index) => (
+                        <div key={index} className="flex gap-2">
+                          <textarea
+                            value={item}
+                            onChange={(e) => {
+                              const newTujuan = [...tujuan];
+                              newTujuan[index] = e.target.value;
+                              setTujuan(newTujuan);
+                            }}
+                            placeholder={`Tujuan ke-${index + 1}`}
+                            className="w-full rounded border border-teal-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+                            rows="2"
+                          />
+
+                          {/* Tombol Hapus: Hanya muncul jika list lebih dari 1 */}
+                          {tujuan.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newTujuan = tujuan.filter(
+                                  (_, i) => i !== index,
+                                );
+                                setTujuan(newTujuan);
+                              }}
+                              className="flex items-center justify-center rounded border border-red-200 bg-red-50 px-2 text-red-500 hover:bg-red-100"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
-                  className="mt-2 w-full rounded-md bg-teal-500 p-2 text-sm font-semibold text-white hover:bg-teal-600"
+                  className="w-full rounded-md bg-teal-500 p-2 text-sm font-semibold text-white hover:bg-teal-600"
                 >
                   Submit
                 </button>
