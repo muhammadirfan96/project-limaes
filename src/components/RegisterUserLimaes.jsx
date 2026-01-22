@@ -76,7 +76,7 @@ const RegisterUserLimaes = () => {
       const response = await axiosInterceptors.post(
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/user-limaes`,
         {
-          user_id: username,
+          user_id: uid,
           nip,
           fullname,
           bagianlimaes_id,
