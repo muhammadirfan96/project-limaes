@@ -153,7 +153,7 @@ const Schedule = () => {
     setShowModal(false);
     setErrForm(null);
     setTanggal("");
-    setWaktu(1);
+    // setWaktu(1);
     setLokasilimaes_id("");
     setKeyEquipmentLokasiLimaes("");
     setPelaksana([]);
