@@ -2,6 +2,7 @@ import { FiSettings } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { axiosRT } from "../config/axios.js";
 import { useDispatch, useSelector } from "react-redux";
+import { all } from "axios";
 
 // ============================
 // Komponen jam real-time
@@ -28,11 +29,27 @@ const Home = () => {
   const [year] = useState(new Date().getFullYear());
   const [day] = useState(new Date().getDate());
 
+  const mainUnitView = ["alba", "boiler", "turbine", "pltg"];
+  const cahView = [
+    "c1ab",
+    "c2ab",
+    "c3a",
+    "c3b",
+    "c4ab",
+    "c5ab",
+    "c6ab",
+    "c7ab",
+    "coal feeder",
+  ];
+  const wtpView = ["wtp", "lab"];
+
+  const allAreaView = ["main unit", "cah", "wtp"];
+
   const [scheduleData, setScheduleData] = useState([]);
   const [allUnit, setAllunit] = useState([]);
   const [unitView, setUnitView] = useState("punagaya");
   const [allArea, setAllArea] = useState([]);
-  const [areaView, setAreaView] = useState("boiler");
+  const [areaView, setAreaView] = useState(allAreaView[0]);
 
   const getAllLokasi = async () => {
     try {
@@ -40,7 +57,7 @@ const Home = () => {
         `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/lokasies-limaes/distinct`,
       );
       setAllunit(res.data.unit);
-      setAllArea(res.data.area);
+      // setAllArea(res.data.area);
     } catch (error) {
       console.error(error);
     }
@@ -64,18 +81,35 @@ const Home = () => {
         {
           ...(role === "user" && {
             lokasi_unit: [userlimaes.bagianlimaes.unit],
+            lokasi_area: userlimaes.bagianlimaes.jabatan.includes("main unit")
+              ? mainUnitView
+              : userlimaes.bagianlimaes.jabatan.includes("cah")
+                ? cahView
+                : userlimaes.bagianlimaes.jabatan.includes("wtp") ||
+                    userlimaes.bagianlimaes.jabatan.includes("operator lab")
+                  ? wtpView
+                  : [],
           }),
-          ...(role === "user" &&
-          userlimaes.bagianlimaes.jabatan.startsWith("tl ")
-            ? { lokasi_area: [areaView] }
-            : { lokasi_area: [userlimaes.bagianlimaes.area] }),
           ...(role.includes("-") && {
             lokasi_unit: [role.split("-")[1]],
-            lokasi_area: [areaView],
+            lokasi_area: userlimaes.fullname.includes("main unit")
+              ? mainUnitView
+              : userlimaes.fullname.includes("cah")
+                ? cahView
+                : userlimaes.fullname.includes("wtp")
+                  ? wtpView
+                  : [],
           }),
           ...(role === "admin" && {
             lokasi_unit: [unitView],
-            lokasi_area: [areaView],
+            lokasi_area:
+              areaView === "main unit"
+                ? mainUnitView
+                : areaView === "cah"
+                  ? cahView
+                  : areaView === "wtp"
+                    ? wtpView
+                    : [],
           }),
           tanggal: keytanggal,
         },
@@ -174,7 +208,15 @@ const Home = () => {
         {/* Left: Title */}
         <div>
           <h1 className="text-2xl font-extrabold uppercase tracking-wide text-slate-800">
-            {unitView}
+            {unitView}-
+            {userlimaes.bagianlimaes.jabatan.includes("main unit")
+              ? "main unit"
+              : userlimaes.bagianlimaes.jabatan.includes("cah")
+                ? "cah"
+                : userlimaes.bagianlimaes.jabatan.includes("wtp") ||
+                    userlimaes.bagianlimaes.jabatan.includes("operator lab")
+                  ? "wtp"
+                  : areaView}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             {new Date().toLocaleDateString("id-ID", {
@@ -215,7 +257,7 @@ const Home = () => {
         )}
 
         <div
-          className={`${role === "user" && !userlimaes.bagianlimaes.jabatan.startsWith("tl") && "hidden"} absolute left-6 top-2 text-xs text-slate-400`}
+          className={`${role !== "admin" && "hidden"} absolute left-6 top-2 text-xs text-slate-400`}
         >
           {/* Select transparan, menutupi area icon */}
           <select
@@ -223,7 +265,7 @@ const Home = () => {
             onChange={(e) => setAreaView(e.target.value)}
             className="absolute inset-0 cursor-pointer appearance-none opacity-0"
           >
-            {allArea.map((area, i) => (
+            {allAreaView.map((area, i) => (
               <option key={i} value={area}>
                 {area}
               </option>

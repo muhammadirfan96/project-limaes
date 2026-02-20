@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setNotification } from "../redux/notificationSlice.js";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
 import { setBottombarBackward } from "../redux/barSlice.js";
+import { all } from "axios";
 
 const Schedule = () => {
   const dispatch = useDispatch();
@@ -41,6 +42,22 @@ const Schedule = () => {
   const defTujuan =
     "Untuk menjamin keselamatan kerja dengan mengeliminasi potensi bahaya, meningkatkan keandalan pembangkit melalui deteksi dini kerusakan pada mesin yang bersih, serta mengoptimalkan produktivitas dengan menghilangkan pemborosan waktu dalam mencari peralatan atau material saat operasional maupun pemeliharaan";
 
+  const mainUnitView = ["alba", "boiler", "turbine", "pltg"];
+  const cahView = [
+    "c1ab",
+    "c2ab",
+    "c3a",
+    "c3b",
+    "c4ab",
+    "c5ab",
+    "c6ab",
+    "c7ab",
+    "coal feeder",
+  ];
+  const wtpView = ["wtp", "lab"];
+
+  const allAreaView = ["main unit", "cah", "wtp"];
+
   const [listLokasiUnit, setListLokasiUnit] = useState([]);
   const [listLokasiArea, setListLokasiArea] = useState([]);
   const [lokasiUnit, setLokasiUnit] = useState("");
@@ -54,7 +71,14 @@ const Schedule = () => {
 
       if (role !== "admin") {
         setListLokasiUnit([role.split("-")[1]]);
-        setListLokasiArea(res.data.area);
+        // setListLokasiArea(res.data.area);
+        if (userlimaes?.fullname.includes("main unit")) {
+          setListLokasiArea(mainUnitView);
+        } else if (userlimaes?.fullname.includes("cah")) {
+          setListLokasiArea(cahView);
+        } else if (userlimaes?.fullname.includes("wtp")) {
+          setListLokasiArea(wtpView);
+        }
       } else if (role === "admin") {
         setListLokasiUnit(res.data.unit);
         setListLokasiArea(res.data.area);

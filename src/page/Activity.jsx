@@ -167,6 +167,8 @@ const Activity = () => {
         limit,
         page,
         key,
+        sortBy: "tanggal",
+        order: "desc",
       };
 
       const scheduleRes = await axiosInterceptors.post(
@@ -221,9 +223,10 @@ const Activity = () => {
         //   lokasi_unit: role.split("-")[1],
         // }),
         tanggal: `1970-01-01@${new Date().toISOString().split("T")[0]}`,
-        sortBy: "tanggal",
         status: [0],
         limit: 3,
+        sortBy: "tanggal",
+        order: "desc",
       };
 
       const scheduleRes = await axiosInterceptors.post(

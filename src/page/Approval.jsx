@@ -205,9 +205,8 @@ const Approval = () => {
   const findDataStatus = async (status) => {
     try {
       const filter = {
-        order: "desc",
-        ...(status === 2 && { limit }),
         ...(status === 1 && { limit: 10 }),
+        ...(status === 2 && { limit }),
         ...(status === 2 && { page }),
         ...(status === 2 && { key }),
         ...(role === "user" && {
@@ -218,6 +217,8 @@ const Approval = () => {
         }),
         status: [status],
         evidence: true,
+        sortBy: "tanggal",
+        order: "desc",
       };
 
       const scheduleRes = await axiosInterceptors.post(
