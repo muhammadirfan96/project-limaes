@@ -28,6 +28,11 @@ const Activity = () => {
   const [catatan, setCatatan] = useState([""]);
   const [sasaran, setSasaran] = useState([""]);
   const [tujuan, setTujuan] = useState([""]);
+  const [oper, setOper] = useState({});
+  const [tanggalOper, setTanggalOper] = useState("");
+  const [waktuOper, setWaktuOper] = useState("");
+  const [statusOper, setStatusOper] = useState("");
+  const [catatanOper, setCatatanOper] = useState("");
 
   const [errForm, setErrForm] = useState(null);
   const [form_id, setForm_id] = useState(null);
@@ -53,6 +58,23 @@ const Activity = () => {
     setCatatan([""]);
     setSasaran([""]);
     setTujuan([""]);
+    dispatch(setBottombarBackward(false));
+  };
+
+  const [showModalOper, setShowModalOper] = useState(false);
+  const openModalOper = () => {
+    setShowModalOper(true);
+    dispatch(setBottombarBackward(true));
+  };
+  const closeModalOper = () => {
+    setShowModalOper(false);
+    setErrForm(null);
+    setForm_id(null);
+    setOper({});
+    setTanggalOper("");
+    setWaktuOper("");
+    setStatusOper("");
+    setCatatanOper("");
     dispatch(setBottombarBackward(false));
   };
 
@@ -86,6 +108,9 @@ const Activity = () => {
       setCatatan(d.catatan.length > 0 ? d.catatan : [""]);
       setSasaran(d.sasaran.length > 0 ? d.sasaran : [""]);
       setTujuan(d.tujuan.length > 0 ? d.tujuan : [""]);
+      d.oper && setOper(d.oper);
+      setTanggalOper(d.oper?.tanggal || "");
+      setWaktuOper(d.oper?.waktu || "");
     } catch (e) {
       const msg = e?.response?.data?.error ?? "Failed to fetch data";
       dispatch(setNotification({ message: msg, background: "bg-red-100" }));
@@ -111,6 +136,7 @@ const Activity = () => {
           catatan: catatan.filter((c) => c.trim() !== ""),
           sasaran: sasaran.filter((s) => s.trim() !== ""),
           tujuan: tujuan.filter((t) => t.trim() !== ""),
+          // oper,
         },
       );
       dispatch(
@@ -118,6 +144,81 @@ const Activity = () => {
       );
       closeModal();
       findData();
+      findDataStatus0();
+    } catch (e) {
+      const arrError = e?.response?.data?.error?.split(",") ?? [
+        "Terjadi kesalahan",
+      ];
+      setErrForm(arrError);
+    }
+  };
+
+  // handle oper
+  const handleOper = async (id) => {
+    try {
+      setForm_id({ id });
+      const oldData = await axiosInterceptors.get(
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/${id}`,
+      );
+      const d = oldData.data;
+      openModalOper();
+      setTanggal(d.tanggal);
+      setWaktu(d.waktu);
+      setLokasilimaes_id(d.lokasilimaes_id);
+      setPelaksana(d.pelaksana);
+      setStatus(d.status);
+      setPenilaian(d.penilaian);
+      setCatatan(d.catatan);
+      setSasaran(d.sasaran);
+      setTujuan(d.tujuan);
+      d.oper && setOper(d.oper);
+      setTanggalOper(d.oper?.tanggal || "");
+      setWaktuOper(d.oper?.waktu || "");
+    } catch (e) {
+      const msg = e?.response?.data?.error ?? "Failed to fetch data";
+      dispatch(setNotification({ message: msg, background: "bg-red-100" }));
+    }
+  };
+
+  // handle submit oper
+  const handleSubmitOper = (e) => {
+    e.preventDefault();
+    updateDataOper(form_id.id);
+  };
+
+  const updateDataOper = async (id) => {
+    try {
+      await axiosInterceptors.patch(
+        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/schedule-limaes/${id}`,
+        {
+          tanggal,
+          waktu,
+          lokasilimaes_id,
+          pelaksana,
+          status,
+          penilaian,
+          catatan,
+          sasaran,
+          tujuan,
+          oper: {
+            tanggal: tanggalOper,
+            waktu: parseInt(waktuOper),
+            process: [
+              ...(oper.process || []),
+              {
+                status: parseInt(statusOper),
+                user: userlimaes.fullname,
+                jabatan: userlimaes.bagianlimaes.jabatan,
+                catatan: catatanOper,
+              },
+            ],
+          },
+        },
+      );
+      dispatch(
+        setNotification({ message: "Data updated", background: "bg-teal-100" }),
+      );
+      closeModalOper();
       findDataStatus0();
     } catch (e) {
       const arrError = e?.response?.data?.error?.split(",") ?? [
@@ -156,13 +257,8 @@ const Activity = () => {
   const findData = async () => {
     try {
       const filter = {
-        // ...(role === "user" && {
         pelaksana_fullname: userlimaes.fullname,
         pelaksana_nip: userlimaes.nip,
-        // }),
-        // ...(role.includes("-") && {
-        //   bidang_unit: role.split("-")[1],
-        // }),
         status: [1, 2],
         limit,
         page,
@@ -211,18 +307,10 @@ const Activity = () => {
   const findDataStatus0 = async () => {
     try {
       const filter = {
-        // ...(role === "user" && {
         lokasi_unit: [userlimaes.bagianlimaes.unit],
         lokasi_area: [userlimaes.bagianlimaes.area],
-        // }),
-        // ...(role === "user" &&
-        //   userlimaes.bagianlimaes.jabatan.startsWith("tl ") && {
-        //     lokasi_unit: userlimaes.bagianlimaes.unit,
-        //   }),
-        // ...(role.includes("-") && {
-        //   lokasi_unit: role.split("-")[1],
-        // }),
         tanggal: `1970-01-01@${new Date().toISOString().split("T")[0]}`,
+        oper: false,
         status: [0],
         limit: 3,
         sortBy: "tanggal",
@@ -355,8 +443,8 @@ const Activity = () => {
               dataStatus0.map((schedule) => (
                 <div
                   key={`${schedule._id}-${schedule.createdAt}`}
-                  onClick={() => handleUpdate(schedule._id)}
-                  className="min-w-[280px] cursor-pointer rounded-xl border border-slate-300 bg-white px-6 py-5 shadow-sm transition-transform duration-300 hover:shadow-lg"
+                  // onClick={() => handleUpdate(schedule._id)}
+                  className="relative min-w-[280px] rounded-xl border border-slate-300 bg-white px-6 py-5 shadow-sm transition-transform duration-300 hover:shadow-lg"
                 >
                   {/* HEADER */}
                   <div className="mb-4 flex items-center justify-between">
@@ -373,7 +461,7 @@ const Activity = () => {
                   </div>
 
                   {/* BODY */}
-                  <div className="space-y-2 text-sm text-slate-600">
+                  <div className="mb-10 space-y-2 text-sm text-slate-600">
                     <p>
                       <span className="font-medium text-slate-700">
                         Unit :{" "}
@@ -431,11 +519,31 @@ const Activity = () => {
                       )}
                     </div>
                   </div>
+                  {/* Laksanakan / Oper Button */}
+                  <div className="absolute bottom-4 left-1/2 flex w-full -translate-x-1/2 gap-2 px-4">
+                    <button
+                      type="button"
+                      className="w-1/2 rounded-md bg-teal-500 p-2 text-sm font-semibold text-white hover:bg-teal-600"
+                      onClick={() => handleUpdate(schedule._id)}
+                    >
+                      Laksanakan
+                    </button>
+                    <button
+                      type="button"
+                      className="w-1/2 rounded-md bg-amber-500 p-2 text-sm font-semibold text-white hover:bg-amber-600"
+                      onClick={() => {
+                        setStatusOper(0);
+                        handleOper(schedule._id);
+                      }}
+                    >
+                      Oper
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (
               <p className="col-span-full mt-10 w-full text-center text-lg text-slate-500">
-                semua schedule sudah dilaksanakan
+                No schedule
               </p>
             )}
           </div>
@@ -783,17 +891,6 @@ const Activity = () => {
                       value={searchListPelaksana}
                       onChange={(e) => setSearchListPelaksana(e.target.value)}
                     />
-                    {/* <button
-                      onClick={() =>
-                        setKeyListPelaksana(
-                          `${searchBasedListPelaksana}=${searchListPelaksana}`,
-                        )
-                      }
-                      className="rounded bg-green-600 p-2 text-white hover:bg-green-700"
-                      type="button"
-                    >
-                      <HiMiniMagnifyingGlass />
-                    </button> */}
                   </div>
 
                   {/* Checkbox list */}
@@ -873,6 +970,88 @@ const Activity = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  className="w-full rounded-md bg-teal-500 p-2 text-sm font-semibold text-white hover:bg-teal-600"
+                >
+                  Submit
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* modal oper */}
+      {showModalOper && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900 bg-opacity-80">
+          <div className="relative w-[95%] rounded-lg bg-white shadow-lg shadow-teal-100 md:w-[80%] lg:w-[50%]">
+            {/* Header */}
+            <p className="mb-2 border-b-2 border-teal-700 py-2 text-center text-base font-semibold text-teal-700">
+              input data operan
+            </p>
+            <button
+              onClick={closeModalOper}
+              className="absolute -right-2 -top-2 rounded-full bg-red-600 px-2 py-1 text-sm text-white shadow hover:bg-red-700"
+            >
+              ✕
+            </button>
+
+            {/* Body */}
+            <div className="mt-1 max-h-[95vh] overflow-auto p-4">
+              {errForm && (
+                <div className="mb-3 rounded border border-red-700 bg-red-50 p-2 text-xs italic text-red-700">
+                  {errForm.map((err, i) => (
+                    <p key={i}>{err}</p>
+                  ))}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmitOper} className="space-y-4">
+                {/* tanggal */}
+                <div>
+                  <label className="block text-sm font-medium text-teal-700">
+                    Tanggal
+                  </label>
+                  <input
+                    type="date"
+                    value={tanggalOper || ""}
+                    onChange={(e) => setTanggalOper(e.target.value)}
+                    className="w-full rounded border border-teal-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                {/* waktu (1 / 2 / 3) */}
+                <div>
+                  <label className="block text-sm font-medium text-teal-700">
+                    Waktu
+                  </label>
+                  <select
+                    value={waktuOper || ""}
+                    onChange={(e) => setWaktuOper(e.target.value)}
+                    className="w-full rounded border border-teal-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  >
+                    <option value="">...</option>
+                    <option value="1">Shift pagi</option>
+                    <option value="2">Shift sore</option>
+                    <option value="3">Shift malam</option>
+                  </select>
+                </div>
+
+                {/* catatan */}
+                <div>
+                  <label className="block text-sm font-medium text-teal-700">
+                    Catatan
+                  </label>
+                  <textarea
+                    value={catatanOper || ""}
+                    onChange={(e) => setCatatanOper(e.target.value)}
+                    className="w-full rounded border border-teal-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    rows="3"
+                  />
                 </div>
 
                 {/* Submit */}

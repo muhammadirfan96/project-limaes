@@ -21,31 +21,31 @@ const Topbar = () => {
 
   const axiosInterceptors = axiosRT(token, expire, dispatch);
 
-  const [userDetail, setUserDetail] = useState(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [userDetail, setUserDetail] = useState(false);
+  // const [loadingDetail, setLoadingDetail] = useState(false);
 
   /* ================= USER DETAIL ================= */
 
-  const findUserLimaes = async () => {
-    try {
-      setLoadingDetail(true);
+  // const findUserLimaes = async () => {
+  //   try {
+  //     setLoadingDetail(true);
 
-      const bagianRes = await axiosInterceptors.get(
-        `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes/${userlimaes?.bagianlimaes_id}`,
-      );
+  //     const bagianRes = await axiosInterceptors.get(
+  //       `/${import.meta.env.VITE_APP_NAME}/${import.meta.env.VITE_APP_VERSION}/bagian-limaes/${userlimaes?.bagianlimaes_id}`,
+  //     );
 
-      setUserDetail({
-        ...userlimaes,
-        bagian_limaes: bagianRes.data,
-      });
-    } catch (e) {
-      const err =
-        e?.response?.data?.error?.split(",")?.[0] || "Terjadi kesalahan";
-      dispatch(setNotification({ message: err, background: "bg-red-100" }));
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
+  //     setUserDetail({
+  //       ...userlimaes,
+  //       bagian_limaes: bagianRes.data,
+  //     });
+  //   } catch (e) {
+  //     const err =
+  //       e?.response?.data?.error?.split(",")?.[0] || "Terjadi kesalahan";
+  //     dispatch(setNotification({ message: err, background: "bg-red-100" }));
+  //   } finally {
+  //     setLoadingDetail(false);
+  //   }
+  // };
 
   const uploadPicture = async (file) => {
     try {
@@ -64,7 +64,7 @@ const Topbar = () => {
         }),
       );
 
-      findUserLimaes();
+      // setUserDetail(false);
     } catch (e) {
       const err =
         e?.response?.data?.error?.split(",")?.[0] || "Terjadi kesalahan";
@@ -104,12 +104,10 @@ const Topbar = () => {
           <div className="flex items-center gap-4 text-sm">
             {username ? (
               <button
-                onClick={findUserLimaes}
+                onClick={() => setUserDetail(true)}
                 className="rounded-lg bg-white/20 px-3 py-1 text-white transition hover:bg-white/30"
               >
-                {loadingDetail
-                  ? "Loading..."
-                  : `Hi, ${userlimaes?.fullname || username}`}
+                Hi, {userlimaes?.fullname || username}
               </button>
             ) : (
               <div className="flex gap-2">
@@ -161,8 +159,8 @@ const Topbar = () => {
               <div className="relative">
                 <img
                   src={
-                    userDetail.picture
-                      ? `${import.meta.env.VITE_API_URL}/${userDetail.picture}`
+                    userlimaes.picture
+                      ? `${import.meta.env.VITE_API_URL}/${userlimaes.picture}`
                       : "/default.png"
                   }
                   alt="User"
@@ -170,14 +168,14 @@ const Topbar = () => {
                 />
 
                 <label
-                  htmlFor={`input_image${userDetail._id}`}
+                  htmlFor={`input_image${userlimaes._id}`}
                   className="absolute bottom-0 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-teal-600 shadow hover:bg-teal-700"
                 >
                   <FaPencilAlt className="text-sm text-white" />
                 </label>
 
                 <input
-                  id={`input_image${userDetail._id}`}
+                  id={`input_image${userlimaes._id}`}
                   type="file"
                   className="hidden"
                   accept="image/*"
@@ -192,13 +190,13 @@ const Topbar = () => {
                 <table className="w-full text-sm">
                   <tbody>
                     {[
-                      ["Fullname", userDetail.fullname],
-                      ["NIP", userDetail.nip],
-                      ["Unit", userDetail.bagian_limaes?.unit],
-                      ["Bagian", userDetail.bagian_limaes?.area],
-                      ["Jabatan", userDetail.bagian_limaes?.jabatan],
-                      ["Atasan", userDetail.bagian_limaes?.atasan],
-                      ["Bawahan", userDetail.bagian_limaes?.bawahan],
+                      ["Fullname", userlimaes.fullname],
+                      ["NIP", userlimaes.nip],
+                      ["Unit", userlimaes.bagianlimaes.unit],
+                      ["Bagian", userlimaes.bagianlimaes.area],
+                      ["Jabatan", userlimaes.bagianlimaes.jabatan],
+                      ["Atasan", userlimaes.bagianlimaes.atasan],
+                      ["Bawahan", userlimaes.bagianlimaes.bawahan],
                     ].map(([label, value]) => (
                       <tr key={label}>
                         <td className="py-1 font-semibold text-gray-600">

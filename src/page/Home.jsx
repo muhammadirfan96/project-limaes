@@ -2,7 +2,6 @@ import { FiSettings } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { axiosRT } from "../config/axios.js";
 import { useDispatch, useSelector } from "react-redux";
-import { all } from "axios";
 
 // ============================
 // Komponen jam real-time

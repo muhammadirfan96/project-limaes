@@ -10,6 +10,7 @@ import { useSelector } from "react-redux";
 import Activity from "../page/Activity.jsx";
 import Schedule from "../page/Schedule.jsx";
 import Approval from "../page/Approval.jsx";
+import Oper from "../page/Oper.jsx";
 
 const Container = () => {
   const sbar = useSelector((state) => state.bar.sidebar);
@@ -29,6 +30,7 @@ const Container = () => {
           <Route path="/activity" element={<Activity />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/approval" element={<Approval />} />
+          <Route path="/oper" element={<Oper />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

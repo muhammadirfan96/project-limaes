@@ -2,6 +2,7 @@ import { BsSpeedometer, BsBasket } from "react-icons/bs";
 import { AiOutlineShopping } from "react-icons/ai";
 import { FaUserFriends } from "react-icons/fa";
 import { IoReceiptOutline, IoPeopleOutline } from "react-icons/io5";
+import { FiSend } from "react-icons/fi";
 import { IoIosPaperPlane } from "react-icons/io";
 import { MdCompareArrows, MdOutlineStorage } from "react-icons/md";
 import { useSelector } from "react-redux";
@@ -22,6 +23,11 @@ const all_menu = [
     path: "approval",
     icon: <IoReceiptOutline />,
     name: "approval",
+  },
+  {
+    path: "oper",
+    icon: <FiSend />,
+    name: "oper",
   },
 ];
 

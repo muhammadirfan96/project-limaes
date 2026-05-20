@@ -34,7 +34,9 @@ const NotFound = () => {
         </button>
 
         {/* Footer text */}
-        <p className="mt-4 text-xs text-slate-400">Error 404 • Limaes System</p>
+        <p className="mt-4 text-xs text-slate-400">
+          Error 404 • Webpunagaya System
+        </p>
       </div>
     </div>
   );

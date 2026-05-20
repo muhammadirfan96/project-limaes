@@ -216,7 +216,7 @@ const Approval = () => {
           bidang_unit: [role.split("-")[1]],
         }),
         status: [status],
-        evidence: true,
+        // evidence: true,
         sortBy: "tanggal",
         order: "desc",
       };
@@ -280,16 +280,35 @@ const Approval = () => {
               dataStatus1.map((schedule) => (
                 <div
                   key={`${schedule._id}-${schedule.createdAt}`}
-                  onClick={() => handleUpdate(schedule._id)}
-                  className="min-w-[280px] cursor-pointer rounded-xl border border-slate-300 bg-white px-6 py-5 shadow-sm transition-transform duration-300 hover:shadow-lg"
+                  onClick={() =>
+                    schedule.evidence && schedule.evidence.length > 0
+                      ? handleUpdate(schedule._id)
+                      : null
+                  }
+                  className={`min-w-[280px] ${
+                    schedule.evidence && schedule.evidence.length > 0
+                      ? "cursor-pointer"
+                      : "cursor-not-allowed"
+                  } relative rounded-xl border border-slate-300 bg-white px-6 py-5 shadow-sm transition-transform duration-300 hover:shadow-lg`}
                 >
+                  {/* Overlay jika evidence kosong */}
+                  {(!schedule.evidence || schedule.evidence.length === 0) && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border border-slate-300 bg-slate-300 bg-opacity-80 text-sm font-medium text-slate-800">
+                      Waiting evidence
+                    </div>
+                  )}
+
                   {/* HEADER */}
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-base font-semibold text-slate-800">
                       {schedule.lokasi.map((l) => l.equipment).join(", ")}
                     </h3>
                     <span
-                      className={`rounded-full ${schedule.status === 0 && "bg-yellow-100 text-yellow-700"} ${schedule.status === 1 && "bg-green-100 text-green-700"} ${schedule.status === 2 && "bg-blue-100 text-blue-700"} px-3 py-1 text-xs font-medium`}
+                      className={`rounded-full ${
+                        schedule.status === 0 && "bg-yellow-100 text-yellow-700"
+                      } ${schedule.status === 1 && "bg-green-100 text-green-700"} ${
+                        schedule.status === 2 && "bg-blue-100 text-blue-700"
+                      } px-3 py-1 text-xs font-medium`}
                     >
                       {schedule.status === 0 && "Terjadwal"}
                       {schedule.status === 1 && "Terlaksana"}
@@ -394,7 +413,7 @@ const Approval = () => {
               ))
             ) : (
               <p className="col-span-full mt-10 w-full text-center text-lg text-slate-500">
-                belum ada data yang perlu diapprove
+                No data to approve
               </p>
             )}
           </div>
