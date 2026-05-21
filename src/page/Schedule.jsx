@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { setNotification } from "../redux/notificationSlice.js";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
 import { setBottombarBackward } from "../redux/barSlice.js";
-import { all } from "axios";
 
 const Schedule = () => {
   const dispatch = useDispatch();

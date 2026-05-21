@@ -216,6 +216,15 @@ const Home = () => {
                     userlimaes.bagianlimaes.jabatan.includes("operator lab")
                   ? "wtp"
                   : areaView}
+            {userlimaes.users.role.includes("admin") &&
+              userlimaes.fullname.includes("main unit") &&
+              "main unit"}
+            {userlimaes.users.role.includes("admin") &&
+              userlimaes.fullname.includes("cah") &&
+              "cah"}
+            {userlimaes.users.role.includes("admin") &&
+              userlimaes.fullname.includes("wtp") &&
+              "wtp"}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             {new Date().toLocaleDateString("id-ID", {
